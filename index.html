@@ -2,6 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
+<meta name="app-ver" content="2026-10-08 22:38">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -58,6 +59,7 @@ th.day .hol{display:block;font-size:10px;color:var(--off-t);font-weight:bold}
 .hcal td.n span{background:#e5e7eb;color:#9aa3af;text-decoration:line-through;cursor:pointer}
 .hcal .ck{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--sub);margin-top:4px}
 .hcal .ck i{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:2px}
+.upbar{margin:8px 16px 0;padding:8px 12px;border:2px solid #15803d;background:#ecfdf3;border-radius:8px;font-size:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-weight:bold;color:#14532d}
 .legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 16px;font-size:12px;color:var(--sub)}
 .legend span{display:inline-flex;align-items:center;gap:4px}
 .sw{width:14px;height:14px;border-radius:3px;border-left:4px solid}
@@ -231,6 +233,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span id="range"></span>
   <span class="spacer"></span>
   <div class="tools">
+  <button id="btnUpdate" title="新しい版の予約表に切り替えます(入力したデータは消えません)">⟳ 最新版に更新</button>
   <button id="btnSend" class="primary">PCへ送る</button>
   <button id="btnRecv">iPadのデータを読み込む</button>
   <input type="file" id="rFile" accept=".json,.txt,application/json,text/plain" hidden>
@@ -256,6 +259,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span><i class="hsw travelsw"></i>往診の前後1時間(受診不可)</span>
   <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。</span>
 </div>
+<div id="upBar" class="upbar" hidden>予約表の新しい版があります。<span class="spacer"></span><button type="button" class="primary" id="upGo">今すぐ更新する</button></div>
 <div id="roBar" class="robar" hidden><b>閲覧専用(iPadから受け取ったデータ)</b><span id="roInfo"></span><span class="spacer"></span><span class="note">予約の入力・変更は iPad でしてください。報酬システムの「入力済み」チェックだけはここで付けられます。</span><button type="button" id="roOff">このPCでも入力する</button></div>
 <div class="wrap"><table id="grid"></table></div>
 
@@ -1094,6 +1098,26 @@ document.getElementById('roOff').onclick=()=>{
   try{ localStorage.removeItem(MODE_KEY); }catch(e){}
   render();
 };
+
+// ---- 最新版に更新(データは消えない。キャッシュを使わず読み込み直す) ----
+const APP_VER=(document.querySelector('meta[name=app-ver]')||{}).content||'dev';
+async function latestVer(){
+  if(!/^https?:/.test(location.protocol) || !window.fetch) return null;
+  try{ const t=await (await fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'})).text(); const m=t.match(/<meta name="app-ver" content="([^"]+)"/); return m?m[1]:null; }catch(e){ return null; }
+}
+function goLatest(){ location.replace(location.pathname+'?v='+Date.now()); }
+async function checkUpdate(){ const v=await latestVer(); document.getElementById('upBar').hidden=!(v && v!==APP_VER); return v; }
+document.getElementById('btnUpdate').onclick=async()=>{
+  if(!/^https?:/.test(location.protocol)){ alert('ファイルから開いている予約表は、ここでは更新できません。新しいファイルを受け取って開き直してください。'); return; }
+  const v=await latestVer();
+  if(v && v===APP_VER && !confirm(`今の予約表が最新版です(${APP_VER} 版)。\nそれでも読み込み直しますか？`)) return;
+  goLatest();
+};
+document.getElementById('upGo').onclick=goLatest;
+document.getElementById('btnUpdate').title+=`\n今の版：${APP_VER}`;
+if(/[?&]v=\d/.test(location.search)) try{ history.replaceState(null,'',location.pathname); }catch(e){}
+checkUpdate();
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkUpdate(); });
 
 render();
 const dlgG=document.getElementById('dlgG');
