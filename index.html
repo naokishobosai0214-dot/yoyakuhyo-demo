@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="ja">
+<head><meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>週間予約表(お試し版)</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#fff; --line:#cfd5dd; --line2:#e7ebf0; --text:#1d2430; --sub:#5d6878;
+  --accent:#2f6fd6; --today:#fff8db;
+  --fixed:#eef0f3; --fixed-b:#374151;
+  --new:#ffdede; --new-b:#d42a2a;
+  --visit:#fff1a8; --visit-b:#e0a800;
+  --normal:#d9e7ff; --normal-b:#1f5fd1;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;font-size:14px}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0 12px 0 0}
+#range{font-weight:bold;font-size:16px;min-width:220px}
+button{font:inherit;border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 10px;cursor:pointer}
+button:hover{background:#eef3fb}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.danger{color:#b42318;border-color:#f0b4ae}
+.spacer{flex:1}
+.legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 16px;font-size:12px;color:var(--sub)}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.sw{width:14px;height:14px;border-radius:3px;border-left:4px solid}
+.wrap{padding:0 16px 24px;overflow-x:auto}
+table{border-collapse:collapse;background:var(--panel);min-width:900px;width:100%;table-layout:fixed}
+th,td{border:1px solid var(--line);vertical-align:top}
+thead th{background:#eef1f5;padding:6px 4px;font-size:13px;position:sticky;top:0}
+th.time{width:56px;font-size:12px;color:var(--sub);text-align:right;padding:4px 6px;background:#f8f9fb}
+th.sun{color:#c0262d} th.sat{color:#1d5fc0}
+th.day{cursor:pointer} th.day:hover{background:#dde7f7}
+th.day .dl{font-size:10px;color:var(--accent);font-weight:normal}
+.dtable{width:100%;min-width:0;border-collapse:collapse;font-size:13px}
+.dtable th,.dtable td{border:1px solid var(--line2);padding:5px 6px;vertical-align:middle}
+.dtable th{background:#f4f6f9;font-size:12px}
+.dtable tr.ns td{background:#f6f6f6;color:#9aa3af}
+.dtable tr.ns .nm{text-decoration:line-through}
+.dtable td.c{text-align:center}
+.dtable input[type=checkbox]{width:18px;height:18px}
+.dsum{font-size:13px;display:flex;gap:12px;flex-wrap:wrap}
+td.today, th.today{background:var(--today)}
+td.travel{background-color:#fff7d6;background-image:repeating-linear-gradient(-45deg,rgba(224,168,0,.45) 0 2px,transparent 2px 6px),repeating-linear-gradient(45deg,rgba(224,168,0,.45) 0 2px,transparent 2px 6px)}
+.travelinfo{font-size:12px;background:#fff7d6;border:1px solid #e0a800;border-radius:6px;padding:6px 8px;color:#6b4e00;font-weight:bold}
+.hsw{display:inline-block;width:22px;height:14px;border:1px solid var(--line);vertical-align:-2px}
+.closedsw{background-color:#eceff3;background-image:repeating-linear-gradient(45deg,rgba(90,100,115,.22) 0 2px,transparent 2px 7px)}
+.travelsw{background-color:#fff7d6;background-image:repeating-linear-gradient(-45deg,rgba(224,168,0,.45) 0 2px,transparent 2px 6px),repeating-linear-gradient(45deg,rgba(224,168,0,.45) 0 2px,transparent 2px 6px)}
+td.closed,th.time.closed{background-color:#eceff3;background-image:repeating-linear-gradient(45deg,rgba(90,100,115,.22) 0 2px,transparent 2px 7px)}
+th.time.closed{color:#9aa3af}
+.slots{display:grid;grid-template-columns:1fr;min-height:46px}
+.slots.two{grid-template-columns:1fr 1fr}
+.slot{border-left:1px dashed var(--line2);padding:3px;cursor:pointer;min-height:46px;position:relative}
+.slot:first-child{border-left:none}
+.add2{position:absolute;right:2px;top:2px;font-size:10px;padding:0 4px;border-radius:4px;color:var(--sub);background:#fff;opacity:0;line-height:16px}
+td:hover .add2{opacity:1}
+.nav,.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mobileonly{display:none}
+/* タッチ画面ではマウスを乗せられないので「＋2人目」を常に出す */
+@media (hover:none){ .add2{opacity:.85} }
+/* ---- スマホ ---- */
+@media (max-width:700px){
+  header{padding:8px 10px;gap:6px}
+  header h1{font-size:15px;margin:0}
+  .spacer{display:none}
+  .nav{width:100%;gap:4px}
+  .nav button{padding:6px 8px}
+  .nav input[type=date]{flex:1;min-width:0}
+  .mobileonly{display:inline-block}
+  #range{width:100%;min-width:0;font-size:15px}
+  .tools{width:100%;flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:2px}
+  .tools button{white-space:nowrap;flex:none}
+  .legend{font-size:11px;padding:6px 10px;gap:6px}
+  .legend span:last-child{display:none}
+  .wrap{padding:0 6px 16px}
+  table{min-width:0}
+  table.week{min-width:760px}
+  th.time{width:44px}
+  .slot{min-height:54px}
+  .bk{font-size:13px}
+  .add2{font-size:12px;padding:2px 6px}
+  #aList .dtable{min-width:640px}
+  #mList .dtable{min-width:520px}
+  #dList .dtable td:nth-child(4),#dList .dtable th:nth-child(4){display:none}
+  .db{padding:10px 12px}
+}
+.slot:hover{background:#f0f5ff}
+.slot .lbl{position:absolute;right:3px;bottom:1px;font-size:10px;color:#b8c0cc}
+.bk{border-radius:4px;border-left:4px solid;padding:2px 4px;font-size:12px;line-height:1.3;word-break:break-all}
+.bk.normal{background:var(--normal);border-color:var(--normal-b)}
+.bk.new{background:var(--new);border-color:var(--new-b)}
+.bk.visit{background:var(--visit);border-color:var(--visit-b)}
+.bk.fixed{box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.bk .nm{font-weight:bold}
+.bk.ns{background:#f1f1f1!important;border-color:#b0b0b0!important;color:#888}
+.bk.ns .nm{text-decoration:line-through}
+.nsmark{display:inline-block;font-size:10px;padding:0 3px;border-radius:3px;margin-right:2px;color:#fff;background:#6b7280;vertical-align:1px}
+.hist .hr.ns{color:#9aa3af}
+.hist .hr.ns .nsl{color:#b42318;font-weight:bold}
+.warn{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#d42a2a;color:#fff;font-size:12px;font-weight:bold;margin-right:2px;vertical-align:-3px;animation:blink 1.2s step-end infinite}
+@keyframes blink{50%{opacity:.35}}
+.bk.conflict{outline:2px solid #d42a2a;outline-offset:-1px}
+@media print{.warn{animation:none}}
+.nsbadge{background:#d42a2a;color:#fff;border-radius:6px;padding:3px 10px;font-size:14px;letter-spacing:.05em}
+.nsbox{background:#fff4f2;border:1px solid #f3c7c0;border-radius:6px;padding:6px 8px}
+.bk .memo{color:var(--sub);font-size:11px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{display:inline-block;font-size:10px;padding:0 3px;border-radius:3px;margin-right:2px;color:#fff;vertical-align:1px}
+.kaku{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:1.5px solid var(--normal-b);border-radius:2px;color:var(--normal-b);font-size:10px;line-height:1;margin-right:2px;vertical-align:-3px;background:#fff}
+.maru{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:1.5px solid var(--new-b);border-radius:50%;color:var(--new-b);font-size:10px;line-height:1;margin-right:2px;vertical-align:-3px;background:#fff}
+.tag.f{background:var(--fixed-b)} .tag.n{background:var(--new-b)} .tag.v{background:var(--visit-b);color:#3b2f00}
+.skipped{font-size:11px;color:#b8c0cc;text-decoration:line-through}
+td.memo textarea{width:100%;min-height:80px;border:none;resize:vertical;font:inherit;font-size:12px;padding:4px;background:transparent}
+th.memoh{font-size:12px}
+.count{font-size:11px;color:var(--sub);font-weight:normal}
+dialog{border:1px solid var(--line);border-radius:10px;padding:0;width:min(440px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(20,30,50,.35)}
+.dh{padding:12px 16px;border-bottom:1px solid var(--line2);font-weight:bold}
+.db{padding:12px 16px;display:grid;gap:10px}
+.df{padding:10px 16px;border-top:1px solid var(--line2);display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+label.row{display:grid;gap:4px;font-size:13px}
+input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
+.radios{display:flex;gap:12px;flex-wrap:wrap}
+.radios label{display:inline-flex;gap:4px;align-items:center}
+#fEvery{width:auto;padding:2px 4px}
+.sug{border:1px solid var(--line);border-radius:6px;max-height:160px;overflow:auto;display:none}
+.sug div{padding:6px 8px;cursor:pointer}
+.sug div:hover,.sug div.act{background:#eef3fb}
+.sug small{color:var(--sub);margin-left:6px}
+.note{font-size:12px;color:var(--sub)}
+.fixinfo{font-size:12px;background:var(--fixed);border-radius:6px;padding:6px 8px}
+#plist{max-height:260px;overflow:auto;border:1px solid var(--line2);border-radius:6px}
+#plist div{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-bottom:1px solid var(--line2)}
+#plist small{color:var(--sub);margin-left:6px}
+.hist{border:1px solid var(--line2);border-radius:6px;font-size:12px}
+.hist .hh{padding:5px 8px;background:#f4f6f9;font-weight:bold;display:flex;justify-content:space-between}
+.hist .hl{max-height:200px;overflow:auto}
+.hist .hr{display:grid;grid-template-columns:120px 72px 1fr;gap:6px;padding:3px 8px;border-top:1px solid var(--line2);cursor:pointer}
+.hist .hr:hover{background:#eef3fb}
+.hist .hr.future{color:var(--accent)}
+.hist .sec{padding:3px 8px;font-size:11px;color:var(--sub);background:#fafbfc;border-top:1px solid var(--line2)}
+.prow{display:grid;grid-template-columns:1fr 1fr auto;gap:6px}
+@media print{
+  @page{size:A4 landscape;margin:8mm}
+  header button,.legend,.noprint{display:none!important}
+  header{position:static;border:none}
+  body{background:#fff}
+  .wrap{padding:0;overflow:visible}
+  table{min-width:0}
+  .slot .lbl,.add2{display:none!important}
+  td.memo textarea{min-height:40px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>週間予約表 <span style="font-size:12px;background:#d42a2a;color:#fff;border-radius:4px;padding:2px 6px;vertical-align:2px">お試し版・架空の患者</span></h1>
+  <div class="nav">
+    <button id="prev">◀ 前の週</button>
+    <button id="thisw">今週</button>
+    <button id="next">次の週 ▶</button>
+    <input type="date" id="jump" title="日付を選んでその週へ" style="width:auto">
+    <button id="btnView" class="mobileonly">週で見る</button>
+  </div>
+  <span id="range"></span>
+  <span class="spacer"></span>
+  <div class="tools">
+  <button id="btnToday">今日の受診者</button>
+  <button id="btnMonth">月別受診回数</button>
+  <button id="btnAll">患者別 履歴・予定</button>
+  <button id="btnPatients">患者名簿</button>
+  <button id="btnFixed">固定客一覧</button>
+  <button id="btnSettings">設定</button>
+  <button id="btnPrint">印刷</button>
+  <button id="btnGuide" class="primary">見どころ</button>
+  <button id="btnReset">見本データに戻す</button>
+  <button id="btnExport">スマホ用に書き出す</button>
+  </div>
+</header>
+<div class="legend">
+  <span><i class="sw" style="background:var(--normal);border-color:var(--normal-b)"></i><b class="kaku">既</b>既存(青)</span>
+  <span><i class="sw" style="background:var(--new);border-color:var(--new-b)"></i><b class="maru">新</b>新規(赤)</span>
+  <span><i class="sw" style="background:var(--visit);border-color:var(--visit-b)"></i><b class="tag v">往</b>往診(黄)</span>
+  <span><b class="tag f">固</b>固定客(毎週自動で表示)</span>
+  <span><i class="hsw closedsw"></i>営業時間外</span>
+  <span><i class="hsw travelsw"></i>往診の前後1時間(受診不可)</span>
+  <span>1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。</span>
+</div>
+<div class="wrap"><table id="grid"></table></div>
+
+<!-- お試し版の見どころ -->
+<dialog id="dlgG" style="width:min(640px,calc(100vw - 32px))">
+  <div class="dh">週間予約表 お試し版の見どころ</div>
+  <div class="db" style="font-size:14px;line-height:1.7">
+    <div class="note">表示されている患者はすべて架空です。自由に触って大丈夫です(右上「見本データに戻す」で元に戻ります)。</div>
+    <ol style="margin:0;padding-left:20px">
+      <li><b>予約を入れる</b>：空いているマスをクリック → 氏名・区分(既存／新規／往診)・メモを入れて保存。氏名は「やま」などふりがなでも候補が出ます。</li>
+      <li><b>区分の色</b>：<b class="kaku">既</b>既存=青、<b class="maru">新</b>新規=赤、<b class="tag v">往</b>往診=黄。</li>
+      <li><b>固定客</b>：予約画面で「固定客にする」→「毎週」か「◯週間に1回」を選ぶと、先の週にも自動で入ります(<b class="tag f">固</b>の印)。「この日だけ休み」もできます。</li>
+      <li><b>2人目</b>：1時間1人が基本。予約の入ったマスにマウスを乗せると「＋2人目」が出ます。</li>
+      <li><b>網掛け</b>：灰色の斜線＝営業時間外(8〜20時の外)、黄色の格子＝往診の前後1時間。黄色の枠に予約が重なると <b class="warn" style="animation:none">！</b> で知らせます(今週の木曜14時を見てください)。</li>
+      <li><b>その日の受診者一覧</b>：表の日付をクリック、または「今日の受診者」。受診しなかった人だけ「受診なし」にチェックします。</li>
+      <li><b>受診履歴</b>：予約をクリックすると、その人の受診履歴と月ごとの回数が下に出ます。</li>
+      <li><b>月別受診回数</b>・<b>患者別 履歴・予定</b>：上のボタンから、全員の回数・次回予定・「予定なし」の人がひと目でわかります。</li>
+      <li><b>日付</b>は自動。「◀前の週／次の週▶」で移動、「印刷」でA4横に印刷できます。</li>
+      <li><b>スマホ用に書き出す</b>：今日から1〜4週間分の予約を、スマホで見るだけのファイルにします。LINEやメールでスマホに送って開きます。</li>
+      <li><b>スマホ</b>では1日ずつ表示します(「◀前の日／次の日▶」で移動、「週で見る」で1週間表示に切替)。上のボタンの列は横にスライドできます。</li>
+    </ol>
+    <div class="note">データはこのパソコンのこのブラウザの中だけに保存されます(インターネットには送られません)。<br>まだ入っていないもの：診療報酬システムとの連携、診療報酬システムとの齟齬チェック。</div>
+  </div>
+  <div class="df"><button type="button" class="primary" onclick="dlgG.close()">はじめる</button></div>
+</dialog>
+
+<!-- 予約の入力 -->
+<dialog id="dlg">
+  <form method="dialog" id="bkForm">
+    <div class="dh" style="display:flex;align-items:center;gap:8px"><span id="dlgTitle"></span><span class="spacer"></span><b id="dlgNs" class="nsbadge" hidden>✕ 受診なし</b></div>
+    <div class="db">
+      <div id="travelInfo" class="travelinfo" hidden>この時間は往診の前後1時間のため、受診できない枠です。</div>
+      <div id="fixInfo" class="fixinfo" hidden></div>
+      <label class="row">患者氏名(漢字・ふりがなのどちらでも検索できます)
+        <input type="text" id="fName" autocomplete="off" placeholder="例：山田 太郎 / やまだ">
+      </label>
+      <div class="sug" id="sug"></div>
+      <div class="radios">
+        <label><input type="radio" name="type" value="normal" checked>既存</label>
+        <label><input type="radio" name="type" value="new">新規</label>
+        <label><input type="radio" name="type" value="visit">往診</label>
+      </div>
+      <label><input type="checkbox" id="fFixed"> 固定客にする(この曜日・この時間に自動で入る)</label>
+      <div class="radios" id="everyBox" style="padding-left:22px">
+        <label><input type="radio" name="every" value="1" checked>毎週</label>
+        <label><input type="radio" name="every" value="n"><select id="fEvery"></select>週間に1回</label>
+      </div>
+      <label class="row">メモ
+        <textarea id="fMemo" rows="3"></textarea>
+      </label>
+      <label class="nsbox"><input type="checkbox" id="fNs"> この日は受診しなかった(キャンセル・来院なし)</label>
+      <div id="linkBox" class="note"></div>
+      <div id="hist"></div>
+    </div>
+    <div class="df">
+      <button type="button" class="danger" id="bDelete">削除</button>
+      <button type="button" id="bSkip" hidden>この日だけ休み</button>
+      <button type="button" id="bUnskip" hidden>休みを取り消す</button>
+      <span class="spacer"></span>
+      <button type="button" id="bCancel">閉じる</button>
+      <button type="button" class="primary" id="bSave">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 患者名簿 -->
+<dialog id="dlgP">
+  <div class="dh">患者名簿</div>
+  <div class="db">
+    <div class="note">ここに登録しておくと、予約のときに名前の一部やふりがなで呼び出せます。予約で初めて入れた名前も自動で追加されます。</div>
+    <div class="prow">
+      <input type="text" id="pName" placeholder="氏名(漢字)">
+      <input type="text" id="pKana" placeholder="ふりがな">
+      <button type="button" class="primary" id="pAdd">追加</button>
+    </div>
+    <input type="text" id="pFilter" placeholder="絞り込み">
+    <div id="plist"></div>
+  </div>
+  <div class="df"><button type="button" onclick="dlgP.close()">閉じる</button></div>
+</dialog>
+
+<!-- 患者別 受診履歴・今後の予定 -->
+<dialog id="dlgA" style="width:min(960px,calc(100vw - 32px))">
+  <div class="dh">患者別 受診履歴・今後の予定</div>
+  <div class="db">
+    <input type="text" id="aFilter" placeholder="氏名・ふりがなで絞り込み">
+    <div id="aList" style="max-height:65vh;overflow:auto"></div>
+    <div class="note">受診＝昨日までに受診した回数(受診なしは除く)。今後の予定は今日以降の予約(固定客は8週間先まで)。氏名をクリックすると詳しい受診履歴が開きます。</div>
+  </div>
+  <div class="df"><button type="button" onclick="dlgA.close()">閉じる</button></div>
+</dialog>
+
+<!-- スマホ閲覧用の書き出し -->
+<dialog id="dlgE">
+  <div class="dh">スマホ閲覧用ファイルを書き出す</div>
+  <div class="db">
+    <div class="note">今の予約を、スマホで見るだけのファイル(閲覧専用)にします。できたファイルをLINEやメールでスマホに送って開いてください。予約を変えたら、もう一度書き出して送り直してください。</div>
+    <label class="row">期間
+      <select id="eWeeks">
+        <option value="7">今日から1週間</option>
+        <option value="14" selected>今日から2週間</option>
+        <option value="28">今日から4週間</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="eMemo" checked> メモも入れる</label>
+    <div class="note" style="color:#b42318">患者の氏名が入ったファイルです。送り先を間違えないようにしてください。</div>
+  </div>
+  <div class="df">
+    <button type="button" onclick="dlgE.close()">閉じる</button>
+    <button type="button" class="primary" id="eGo">書き出す</button>
+  </div>
+</dialog>
+
+<!-- 月別受診回数 -->
+<dialog id="dlgM" style="width:min(720px,calc(100vw - 32px))">
+  <div class="dh" style="display:flex;align-items:center;gap:8px">
+    <button type="button" id="mPrev">◀</button>
+    <span id="mTitle" style="flex:1;text-align:center"></span>
+    <button type="button" id="mNext">▶</button>
+  </div>
+  <div class="db">
+    <div class="dsum" id="mSum"></div>
+    <div id="mList" style="max-height:60vh;overflow:auto"></div>
+    <div class="note">受診＝昨日までに受診した回数(受診なしは除く)。予定＝今日以降の予約。氏名をクリックするとその人の受診履歴が開きます。</div>
+  </div>
+  <div class="df"><button type="button" onclick="dlgM.close()">閉じる</button></div>
+</dialog>
+
+<!-- その日の受診者一覧 -->
+<dialog id="dlgD" style="width:min(620px,calc(100vw - 32px))">
+  <div class="dh" style="display:flex;align-items:center;gap:8px">
+    <button type="button" id="dPrev">◀</button>
+    <span id="dTitle" style="flex:1;text-align:center"></span>
+    <button type="button" id="dNext">▶</button>
+  </div>
+  <div class="db">
+    <div class="dsum" id="dSum"></div>
+    <div id="dList"></div>
+    <div class="note">受診しなかった人だけ「受診なし」にチェックを入れてください。チェックはその場で保存されます。</div>
+  </div>
+  <div class="df"><button type="button" onclick="dlgD.close()">閉じる</button></div>
+</dialog>
+
+<!-- 受診履歴(名簿から) -->
+<dialog id="dlgH">
+  <div class="dh" id="dlgHTitle">受診履歴</div>
+  <div class="db"><div id="histP"></div></div>
+  <div class="df"><button type="button" onclick="dlgH.close()">閉じる</button></div>
+</dialog>
+
+<!-- 固定客一覧 -->
+<dialog id="dlgF">
+  <div class="dh">固定客一覧</div>
+  <div class="db"><div id="flist"></div></div>
+  <div class="df"><button type="button" onclick="dlgF.close()">閉じる</button></div>
+</dialog>
+
+<!-- 設定 -->
+<dialog id="dlgS">
+  <div class="dh">設定</div>
+  <div class="db">
+    <label class="row">営業時間(この外は網掛けになります)
+      <span style="display:flex;gap:6px;align-items:center">
+        <select id="sOpen"></select> 時 〜 <select id="sClose"></select> 時
+      </span>
+    </label>
+    <label class="row">表示する時間帯
+      <span style="display:flex;gap:6px;align-items:center">
+        <select id="sStart"></select> 時 〜 <select id="sEnd"></select> 時
+      </span>
+    </label>
+    <label class="row">診療報酬システムのURL(任意)
+      <input type="url" id="sLink" placeholder="例：https://example.local/receipt?name={name}&date={date}">
+    </label>
+    <div class="note">{name}=患者氏名、{date}=予約日 に置き換わります。入れておくと予約画面に「診療報酬システムを開く」が出ます。</div>
+    <hr style="border:none;border-top:1px solid var(--line2);width:100%">
+    <div class="note">データはこのパソコンのこのブラウザの中だけに保存されます。別のパソコンへ移すとき・念のための控えには「バックアップ」を使ってください。</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button type="button" id="sExport">バックアップを保存</button>
+      <button type="button" id="sImport">バックアップから戻す</button>
+      <input type="file" id="sFile" accept=".json" hidden>
+    </div>
+  </div>
+  <div class="df">
+    <button type="button" onclick="dlgS.close()">閉じる</button>
+    <button type="button" class="primary" id="sSave">保存</button>
+  </div>
+</dialog>
+
+<script>
+const KEY = 'amatsumi_yoyaku_demo';
+const DOW = ['日','月','火','水','木','金','土'];
+const SLOT = ['1人目','2人目'];
+// ---- お試し版：見本データ(開いた日の週を基準に作る) ----
+function demoData(){
+  const D=blank(), ws=sunday(new Date());
+  const day=(w,dow)=>ymd(addDays(ws,w*7+dow)); // w=何週後, dow=0(日)〜6(土)
+  D.patients=[
+    {name:'山田 太郎',kana:'やまだ たろう'},{name:'佐藤 花子',kana:'さとう はなこ'},{name:'高橋 健一',kana:'たかはし けんいち'},
+    {name:'中村 正',kana:'なかむら ただし'},{name:'小林 さくら',kana:'こばやし さくら'},{name:'鈴木 一郎',kana:'すずき いちろう'},
+    {name:'田中 次郎',kana:'たなか じろう'},{name:'加藤 由美',kana:'かとう ゆみ'},{name:'渡辺 大輔',kana:'わたなべ だいすけ'},
+    {name:'伊藤 美咲',kana:'いとう みさき'},{name:'松本 和子',kana:'まつもと かずこ'}];
+  const R=(name,type,dow,hour,every,fromW,memo='')=>D.rules.push({id:uid(),name,type,memo,dow,hour,slot:0,every,from:day(fromW,dow),to:''});
+  R('山田 太郎','normal',1,10,1,-6,'腰痛');
+  R('佐藤 花子','normal',3,14,1,-6);
+  R('高橋 健一','normal',2,9,2,-6,'膝');
+  R('中村 正','visit',4,15,1,-6,'自宅 ○○町');
+  R('松本 和子','normal',5,17,1,-4);
+  const B=(w,dow,h,s,name,type,memo='')=>{ D.bookings[key(day(w,dow),h,s)]={name,type,memo}; };
+  // 今週
+  B(0,1,10,1,'小林 さくら','new','初診 紹介：山田さん');
+  B(0,2,16,0,'鈴木 一郎','normal');
+  B(0,4,14,0,'田中 次郎','normal','往診前と重なり要調整');
+  B(0,3,18,0,'加藤 由美','new');
+  B(0,5,9,0,'渡辺 大輔','normal');
+  B(0,6,10,0,'伊藤 美咲','visit','施設訪問');
+  // 先週まで(履歴用)
+  B(-1,2,16,0,'鈴木 一郎','normal'); B(-2,2,16,0,'鈴木 一郎','normal'); B(-3,2,16,0,'鈴木 一郎','normal');
+  B(-1,4,11,0,'田中 次郎','normal'); B(-3,4,11,0,'田中 次郎','normal');
+  B(-1,5,9,0,'渡辺 大輔','normal'); B(-2,5,9,0,'渡辺 大輔','normal');
+  B(-2,6,10,0,'伊藤 美咲','visit');
+  // 受診なしの例
+  D.noshow[key(day(-1,1),10,0)]=true;   // 山田 太郎 先週月曜
+  D.noshow[key(day(-2,2),16,0)]=true;   // 鈴木 一郎 2週前火曜
+  // 来週以降
+  B(1,2,16,0,'鈴木 一郎','normal'); B(1,5,9,0,'渡辺 大輔','normal'); B(2,6,10,0,'伊藤 美咲','visit');
+  D.dayMemos[ymd(new Date())]='（例）午後 往診車の点検';
+  return D;
+}
+let S = load();
+if(!Object.keys(S.bookings).length && !S.rules.length){ S=demoData(); save(); var firstOpen=true; }
+let weekStart = sunday(new Date());
+let curDay = new Date(); // スマホの1日表示で見ている日
+let mobileView = 'day';  // スマホでの表示：day=1日 / week=1週間
+const mq = matchMedia('(max-width:700px)');
+function dayMode(){ return mq.matches && mobileView==='day'; }
+function setDay(d){ curDay=new Date(d); weekStart=sunday(curDay); render(); }
+mq.addEventListener('change',()=>render());
+let cur = null; // 編集中のマス
+
+function blank(){ return {bookings:{}, rules:[], skips:{}, dayMemos:{}, noshow:{}, patients:[], settings:{start:6,end:23,open:8,close:20,link:''}}; }
+function merge(d){ const b=blank(); return Object.assign(b, d, {settings:Object.assign(b.settings, d.settings||{})}); }
+function isOpen(t){ return t>=S.settings.open && t<S.settings.close; }
+// 往診の前後1時間(その時間の前後どちらかの枠に往診が入っている。受診なしの往診は除く)
+function isTravel(ds,t){
+  for(const u of [t-1,t+1]) for(let s=0;s<2;s++){ const x=lookup(ds,u,s); if(x && x.kind!=='skipped' && x.type==='visit' && !x.ns) return true; }
+  return false;
+}
+function load(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) return merge(s); }catch(e){}
+  return blank();
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ alert('保存できませんでした(ブラウザの保存領域が使えません)。バックアップを保存してください。'); } }
+
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parse(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function sunday(d){ const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); x.setDate(x.getDate()-x.getDay()); return x; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function key(date,h,s){ return date+'|'+h+'|'+s; }
+function weeksBetween(a,b){ return Math.round((sunday(parse(b))-sunday(parse(a)))/(7*864e5)); }
+function everyText(r){ return (r.every||1)>1 ? `${r.every}週間に1回` : '毎週'; }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+// そのマスに何が入っているか(個別予約 > 固定客)
+function lookup(date,h,s){
+  const b = S.bookings[key(date,h,s)];
+  const ns = !!S.noshow[key(date,h,s)];
+  if(b) return {kind:'booking', ...b, ns};
+  const dow = parse(date).getDay();
+  const r = S.rules.find(r=>r.dow===dow && r.hour===h && r.slot===s && r.from<=date && (!r.to || date<=r.to) && weeksBetween(r.from,date)%(r.every||1)===0);
+  if(r){
+    if(S.skips[r.id+'|'+date]) return {kind:'skipped', rule:r};
+    return {kind:'rule', rule:r, name:r.name, type:r.type, memo:r.memo, ns};
+  }
+  return null;
+}
+
+function cellHtml(x,tv){
+  if(!x) return '';
+  if(x.kind==='skipped') return `<div class="skipped">${esc(x.rule.name)}(休み)</div>`;
+  const tags = (x.kind==='rule'?'<b class="tag f">固</b>':'') + ((x.type||'normal')==='normal'?'<b class="kaku">既</b>':'') + (x.type==='new'?'<b class="maru">新</b>':'') + (x.type==='visit'?'<b class="tag v">往</b>':'');
+  // 往診の前後1時間(黄色の網掛け)に予約が重なったら「！」で注意(受診なしは除く)
+  const cf = tv && !x.ns;
+  return `<div class="bk ${x.type||'normal'} ${x.kind==='rule'?'fixed':''} ${cf?'conflict':''}" ${cf?'title="往診の前後1時間と重なっています"':''}>${cf?'<b class="warn">！</b>':''}${tags}<span class="nm">${esc(x.name)}</span>${x.memo?`<span class="memo">${esc(x.memo)}</span>`:''}</div>`;
+}
+
+function render(){
+  const days = dayMode() ? [new Date(curDay.getFullYear(),curDay.getMonth(),curDay.getDate())] : [...Array(7)].map((_,i)=>addDays(weekStart,i));
+  const dm = dayMode();
+  document.getElementById('prev').textContent = dm ? '◀ 前の日' : '◀ 前の週';
+  document.getElementById('next').textContent = dm ? '次の日 ▶' : '次の週 ▶';
+  document.getElementById('thisw').textContent = dm ? '今日' : '今週';
+  document.getElementById('btnView').textContent = mobileView==='day' ? '週で見る' : '日で見る';
+  const today = ymd(new Date());
+  const a=days[0], b=days[6];
+  document.getElementById('range').textContent = dm ? `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日(${DOW[a.getDay()]})` : `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日(日) 〜 ${b.getMonth()+1}月${b.getDate()}日(土)`;
+  document.getElementById('jump').value = dm ? ymd(curDay) : ymd(a);
+  document.getElementById('grid').className = dm ? 'day' : 'week';
+  let h = '<thead><tr><th class="time"></th>';
+  days.forEach(d=>{
+    const ds=ymd(d); let n=0;
+    for(let t=S.settings.start;t<=S.settings.end;t++) for(let s=0;s<2;s++){ const x=lookup(ds,t,s); if(x && x.kind!=='skipped') n++; }
+    h += `<th class="day ${d.getDay()===0?'sun':d.getDay()===6?'sat':''} ${ds===today?'today':''}" data-day="${ds}" title="この日の受診者一覧を開く">${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]})<br><span class="count">${n}件</span> <span class="dl">一覧▶</span></th>`;
+  });
+  h += '</tr></thead><tbody>';
+  for(let t=S.settings.start;t<=S.settings.end;t++){
+    const cl = isOpen(t) ? '' : 'closed'; // 営業時間外は網掛け
+    h += `<tr><th class="time ${cl}">${t}:00</th>`;
+    days.forEach(d=>{
+      const ds=ymd(d);
+      const x0=lookup(ds,t,0), x1=lookup(ds,t,1);
+      const two = !!x1; // 2人目は入っているときだけ表示
+      const tv = isTravel(ds,t);
+      h += `<td class="${tv?'travel':isOpen(t)&&ds===today?'today':cl}" ${tv?'title="往診の前後1時間(受診不可)"':''}><div class="slots ${two?'two':''}">`;
+      h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="0">${cellHtml(x0,tv)}${two?'<span class="lbl">1</span>':''}`;
+      if(!two && x0 && x0.kind!=='skipped') h += `<button type="button" class="add2" data-d="${ds}" data-h="${t}" title="この時間に2人目を入れる">＋2人目</button>`;
+      h += '</div>';
+      if(two) h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="1">${cellHtml(x1,tv)}<span class="lbl">2</span></div>`;
+      h += '</div></td>';
+    });
+    h += '</tr>';
+  }
+  h += '<tr><th class="time memoh">MEMO</th>';
+  days.forEach(d=>{ const ds=ymd(d); h += `<td class="memo ${ds===today?'today':''}"><textarea data-memo="${ds}" placeholder="この日のメモ">${esc(S.dayMemos[ds]||'')}</textarea></td>`; });
+  h += '</tr></tbody>';
+  document.getElementById('grid').innerHTML = h;
+}
+
+document.getElementById('grid').addEventListener('click',e=>{
+  const a2 = e.target.closest('.add2');
+  if(a2){ openSlot(a2.dataset.d, +a2.dataset.h, 1); return; }
+  const el = e.target.closest('.slot'); if(!el) return;
+  openSlot(el.dataset.d, +el.dataset.h, +el.dataset.s);
+});
+document.getElementById('grid').addEventListener('input',e=>{
+  const ds = e.target.dataset.memo; if(!ds) return;
+  if(e.target.value) S.dayMemos[ds]=e.target.value; else delete S.dayMemos[ds];
+  save();
+});
+
+// ---- 予約の入力 ----
+const dlg = document.getElementById('dlg');
+const fName = document.getElementById('fName'), fMemo=document.getElementById('fMemo'), fFixed=document.getElementById('fFixed');
+function setType(v){ dlg.querySelector(`input[name=type][value=${v||'normal'}]`).checked=true; }
+const everyBox=document.getElementById('everyBox'), fEvery=document.getElementById('fEvery');
+for(let i=2;i<=12;i++) fEvery.add(new Option(i,i));
+fEvery.value=2;
+function setEvery(n){ if(n>1){ fEvery.value=n; dlg.querySelector('input[name=every][value=n]').checked=true; } else { fEvery.value=2; dlg.querySelector('input[name=every][value="1"]').checked=true; } }
+function getEvery(){ return dlg.querySelector('input[name=every]:checked').value==='n' ? +fEvery.value : 1; }
+fFixed.addEventListener('change',()=>{ everyBox.hidden=!fFixed.checked; });
+// 週数の▼に触れた時点で「◯週間に1回」に切り替える
+['mouseenter','mousedown','focus','change'].forEach(ev=>fEvery.addEventListener(ev,()=>{ dlg.querySelector('input[name=every][value=n]').checked=true; }));
+document.getElementById('fNs').addEventListener('change',e=>{ document.getElementById('dlgNs').hidden=!e.target.checked; });
+function getType(){ return dlg.querySelector('input[name=type]:checked').value; }
+
+function openSlot(date,h,s){
+  const x = lookup(date,h,s);
+  cur = {date,h,s,x};
+  const d = parse(date);
+  document.getElementById('dlgTitle').textContent = `${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]}) ${h}:00${s?'(2人目)':''}`;
+  const info = document.getElementById('fixInfo');
+  const src = x && x.kind!=='skipped' ? x : (x && x.kind==='skipped' ? x.rule : null);
+  fName.value = src ? src.name : '';
+  fMemo.value = src ? (src.memo||'') : '';
+  setType(src ? src.type : 'normal');
+  document.getElementById('fNs').checked = !!(x && x.ns);
+  document.getElementById('dlgNs').hidden = !(x && x.ns);
+  document.getElementById('fNs').parentElement.hidden = !!(x && x.kind==='skipped');
+  fFixed.checked = !!(x && (x.kind==='rule'||x.kind==='skipped'));
+  setEvery(x && x.rule ? (x.rule.every||1) : 1);
+  everyBox.hidden = !fFixed.checked;
+  document.getElementById('travelInfo').hidden = !isTravel(date,h);
+  info.hidden = !(x && (x.kind==='rule'||x.kind==='skipped'));
+  if(!info.hidden) info.textContent = `固定客：${everyText(x.rule)} ${DOW[x.rule.dow]}曜 ${x.rule.hour}:00${x.rule.slot?'(2人目)':''}(${x.rule.from}から)。名前・区分・メモを変えると、これから先の分もすべて変わります。間隔を変えると、この日から新しい間隔で数え直します。` + (x.kind==='skipped'?' この日は「休み」になっています。':'');
+  document.getElementById('bSkip').hidden = !(x && x.kind==='rule');
+  document.getElementById('bUnskip').hidden = !(x && x.kind==='skipped');
+  document.getElementById('bDelete').hidden = !x;
+  document.getElementById('bDelete').textContent = x && x.kind!=='booking' ? 'この日以降の固定をやめる' : '削除';
+  updateLink(); renderHist();
+  hideSug();
+  dlg.showModal();
+  if(!x) fName.focus();
+}
+
+function updateLink(){
+  const box = document.getElementById('linkBox');
+  const url = S.settings.link;
+  if(!url){ box.innerHTML = ''; return; }
+  const name = fName.value.trim();
+  if(!name){ box.innerHTML=''; return; }
+  const u = url.replace('{name}',encodeURIComponent(name)).replace('{date}',cur?cur.date:'');
+  box.innerHTML = `<a href="${esc(u)}" target="_blank" rel="noopener">診療報酬システムを開く(${esc(name)})</a>`;
+}
+
+function addPatient(name,kana){
+  name=name.trim(); if(!name) return;
+  if(!S.patients.some(p=>p.name===name)) S.patients.push({name, kana:(kana||'').trim()});
+}
+
+document.getElementById('bSave').onclick = ()=>{
+  const name = fName.value.trim();
+  if(!name){ fName.focus(); return; }
+  const {date,h,s,x} = cur, k = key(date,h,s);
+  const data = {name, type:getType(), memo:fMemo.value.trim()};
+  if(x && (x.kind==='rule'||x.kind==='skipped')){
+    if(fFixed.checked){
+      const ev=getEvery();
+      if(ev===(x.rule.every||1)) Object.assign(x.rule, data);
+      else { // 間隔を変えたら、この日から新しい固定として数え直す
+        x.rule.to = ymd(addDays(parse(date),-1));
+        delete S.skips[x.rule.id+'|'+date];
+        S.rules.push({id:uid(), dow:parse(date).getDay(), hour:h, slot:s, from:date, to:'', every:ev, ...data});
+      }
+    }
+    else { // 固定をやめて、この日だけの予約にする
+      x.rule.to = ymd(addDays(parse(date),-1));
+      S.bookings[k] = data;
+    }
+  }else if(fFixed.checked){
+    delete S.bookings[k];
+    S.rules.push({id:uid(), dow:parse(date).getDay(), hour:h, slot:s, from:date, to:'', every:getEvery(), ...data});
+  }else{
+    S.bookings[k] = data;
+  }
+  if(document.getElementById('fNs').checked) S.noshow[k]=true; else delete S.noshow[k];
+  cleanRules();
+  addPatient(name);
+  save(); render(); dlg.close();
+};
+document.getElementById('bDelete').onclick = ()=>{
+  const {date,h,s,x} = cur;
+  if(x.kind==='booking') delete S.bookings[key(date,h,s)];
+  else x.rule.to = ymd(addDays(parse(date),-1));
+  delete S.noshow[key(date,h,s)];
+  cleanRules();
+  save(); render(); dlg.close();
+};
+document.getElementById('bSkip').onclick = ()=>{ S.skips[cur.x.rule.id+'|'+cur.date]=true; save(); render(); dlg.close(); };
+document.getElementById('bUnskip').onclick = ()=>{ delete S.skips[cur.x.rule.id+'|'+cur.date]; save(); render(); dlg.close(); };
+document.getElementById('bCancel').onclick = ()=>dlg.close();
+function cleanRules(){ S.rules = S.rules.filter(r=>!r.to || r.to>=r.from); }
+
+// 名前の候補(漢字・ふりがなの部分一致)
+const sug = document.getElementById('sug');
+let sugIdx = -1;
+function kata2hira(s){ return s.replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60)); }
+function norm(s){ return kata2hira((s||'').replace(/[\s　]/g,'')); }
+function hideSug(){ sug.style.display='none'; sugIdx=-1; }
+fName.addEventListener('input',()=>{
+  updateLink(); renderHist();
+  const q = norm(fName.value);
+  if(!q){ hideSug(); return; }
+  const hits = S.patients.filter(p=>norm(p.name).includes(q)||norm(p.kana).includes(q)).slice(0,20);
+  if(!hits.length){ hideSug(); return; }
+  sug.innerHTML = hits.map((p,i)=>`<div data-n="${esc(p.name)}">${esc(p.name)}<small>${esc(p.kana)}</small></div>`).join('');
+  sug.style.display='block'; sugIdx=-1;
+});
+sug.addEventListener('mousedown',e=>{ const d=e.target.closest('div[data-n]'); if(!d) return; e.preventDefault(); pick(d.dataset.n); });
+fName.addEventListener('keydown',e=>{
+  const items=[...sug.querySelectorAll('div[data-n]')];
+  if(sug.style.display!=='block'||!items.length) return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); sugIdx=(sugIdx+(e.key==='ArrowDown'?1:-1)+items.length)%items.length; items.forEach((x,i)=>x.classList.toggle('act',i===sugIdx)); }
+  else if(e.key==='Enter' && sugIdx>=0){ e.preventDefault(); pick(items[sugIdx].dataset.n); }
+});
+function pick(n){ fName.value=n; hideSug(); updateLink(); renderHist(); }
+
+// ---- 受診履歴 ----
+// 個別予約と固定客(休み・別の人で上書きされた日は除く)から、その人の予約日を集める
+const TYPE_LABEL={normal:'既存',new:'新規',visit:'往診'};
+function history(name){
+  const out=[], seen=new Set();
+  const push=(date,h,s,x)=>{ const k=key(date,h,s); if(seen.has(k)) return; seen.add(k); out.push({date,h,s,type:x.type,memo:x.memo,fixed:x.kind==='rule',ns:!!S.noshow[k]}); };
+  for(const k in S.bookings){ const b=S.bookings[k]; if(b.name!==name) continue; const [d,h,s]=k.split('|'); push(d,+h,+s,{kind:'booking',...b}); }
+  const limit=ymd(addDays(new Date(),56)); // 固定客は8週間先まで
+  S.rules.filter(r=>r.name===name).forEach(r=>{
+    const end = r.to && r.to<limit ? r.to : limit;
+    for(let d=parse(r.from); ymd(d)<=end; d=addDays(d,7*(r.every||1))){
+      const ds=ymd(d), x=lookup(ds,r.hour,r.slot);
+      if(x && x.kind==='rule' && x.name===name) push(ds,r.hour,r.slot,x);
+    }
+  });
+  return out.sort((a,b)=>(b.date+String(b.h).padStart(2,'0')).localeCompare(a.date+String(a.h).padStart(2,'0')));
+}
+// 月ごとの受診回数(直近12か月で受診のあった月)
+function monthLine(done){
+  if(!done.length) return '';
+  const m={}; done.forEach(x=>{ const k=x.date.slice(0,7); m[k]=(m[k]||0)+1; });
+  const ks=Object.keys(m).sort().reverse().slice(0,12);
+  return `<div class="sec">月ごとの受診回数</div><div style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px 12px">`
+    + ks.map(k=>`<span>${+k.slice(0,4)}年${+k.slice(5)}月 <b>${m[k]}回</b></span>`).join('') + '</div>';
+}
+function histHtml(name){
+  if(!name) return '';
+  const list=history(name), today=ymd(new Date());
+  const fut=list.filter(x=>x.date>=today).reverse(), past=list.filter(x=>x.date<today), done=past.filter(x=>!x.ns);
+  const row=x=>{ const d=parse(x.date); return `<div class="hr ${x.date>=today?'future':''} ${x.ns?'ns':''}" data-go="${x.date}"><span>${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})</span><span>${x.h}:00${x.s?'(2人目)':''}</span><span>${x.ns?'<span class="nsl">受診なし</span>　':''}${TYPE_LABEL[x.type]||''}${x.fixed?'・固定':''}${x.memo?'　'+esc(x.memo):''}</span></div>`; };
+  const last = done[0] ? (d=>`${d.getMonth()+1}/${d.getDate()}`)(parse(done[0].date)) : 'なし';
+  const nsn = past.length-done.length;
+  return `<div class="hist"><div class="hh"><span>${esc(name)} さんの受診履歴</span><span>受診 ${done.length}回${nsn?`(受診なし ${nsn}回)`:''}・前回 ${last}</span></div><div class="hl">`
+    + (fut.length?`<div class="sec">今後の予約</div>`+fut.map(row).join(''):'')
+    + monthLine(done)
+    + `<div class="sec">これまで(新しい順)</div>` + (past.length?past.map(row).join(''):'<div class="hr" style="cursor:default">まだありません</div>')
+    + `</div></div>`;
+}
+function renderHist(){ document.getElementById('hist').innerHTML = histHtml(fName.value.trim()); }
+// 履歴の行をクリックすると、その週の予約表へ移動
+function goWeek(e,dlgEl){ const r=e.target.closest('[data-go]'); if(!r) return; setDay(parse(r.dataset.go)); dlgEl.close(); }
+document.getElementById('hist').addEventListener('click',e=>goWeek(e,dlg));
+const dlgH=document.getElementById('dlgH');
+document.getElementById('histP').addEventListener('click',e=>{ goWeek(e,dlgH); dlgP.close(); });
+function openHist(name){ document.getElementById('dlgHTitle').textContent=name+' さんの受診履歴'; document.getElementById('histP').innerHTML=histHtml(name); dlgH.showModal(); }
+
+// ---- 患者名簿 ----
+const dlgP=document.getElementById('dlgP');
+function renderP(){
+  const q=norm(document.getElementById('pFilter').value);
+  const list=S.patients.filter(p=>!q||norm(p.name).includes(q)||norm(p.kana).includes(q))
+    .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
+  document.getElementById('plist').innerHTML = list.length ? list.map(p=>`<div><span>${esc(p.name)}<small>${esc(p.kana)}</small></span><span><button type="button" data-h="${esc(p.name)}">履歴</button> <button type="button" data-k="${esc(p.name)}">ふりがな</button> <button type="button" class="danger" data-del="${esc(p.name)}">削除</button></span></div>`).join('') : '<div class="note">まだ登録がありません</div>';
+}
+document.getElementById('btnPatients').onclick=()=>{ document.getElementById('pFilter').value=''; renderP(); dlgP.showModal(); };
+document.getElementById('pFilter').oninput=renderP;
+document.getElementById('pAdd').onclick=()=>{
+  const n=document.getElementById('pName'), k=document.getElementById('pKana');
+  if(!n.value.trim()) return;
+  const ex=S.patients.find(p=>p.name===n.value.trim());
+  if(ex) ex.kana=k.value.trim(); else addPatient(n.value,k.value);
+  n.value=''; k.value=''; save(); renderP(); n.focus();
+};
+document.getElementById('plist').onclick=e=>{
+  const del=e.target.dataset.del, kn=e.target.dataset.k, hn=e.target.dataset.h;
+  if(hn){ openHist(hn); return; }
+  if(del){ if(confirm(del+' を名簿から削除しますか？(予約は消えません)')){ S.patients=S.patients.filter(p=>p.name!==del); save(); renderP(); } }
+  if(kn){ const p=S.patients.find(p=>p.name===kn); const v=prompt(kn+' のふりがな',p.kana||''); if(v!==null){ p.kana=v.trim(); save(); renderP(); } }
+};
+
+// ---- 固定客一覧 ----
+const dlgF=document.getElementById('dlgF');
+document.getElementById('btnFixed').onclick=()=>{
+  const today=ymd(new Date());
+  const list=S.rules.filter(r=>!r.to||r.to>=today).sort((a,b)=>a.dow-b.dow||a.hour-b.hour||a.slot-b.slot);
+  document.getElementById('flist').innerHTML = list.length ? '<table style="min-width:0"><tr><th>間隔</th><th>曜日</th><th>時間</th><th>氏名</th><th>開始</th></tr>'+list.map(r=>`<tr><td>${everyText(r)}</td><td>${DOW[r.dow]}</td><td>${r.hour}:00${r.slot?'(2人目)':''}</td><td>${r.type==='visit'?'<b class="tag v">往</b>':''}${esc(r.name)}</td><td>${r.from}${r.to?'〜'+r.to:''}</td></tr>`).join('')+'</table>' : '<div class="note">固定客はまだいません。予約を入れるときに「固定客にする」にチェックを入れると登録されます。</div>';
+  dlgF.showModal();
+};
+
+// ---- 設定 ----
+const dlgS=document.getElementById('dlgS');
+const sStart=document.getElementById('sStart'), sEnd=document.getElementById('sEnd');
+const sOpen=document.getElementById('sOpen'), sClose=document.getElementById('sClose');
+for(let i=0;i<24;i++){ sStart.add(new Option(i,i)); sEnd.add(new Option(i,i)); sOpen.add(new Option(i,i)); }
+for(let i=1;i<=24;i++) sClose.add(new Option(i,i));
+document.getElementById('btnSettings').onclick=()=>{ sStart.value=S.settings.start; sEnd.value=S.settings.end; sOpen.value=S.settings.open; sClose.value=S.settings.close; document.getElementById('sLink').value=S.settings.link||''; dlgS.showModal(); };
+document.getElementById('sSave').onclick=()=>{
+  const a=+sStart.value,b=+sEnd.value; if(a>b){ alert('開始は終了より前にしてください'); return; }
+  if(+sOpen.value>=+sClose.value){ alert('営業時間の開始は終了より前にしてください'); return; }
+  S.settings.open=+sOpen.value; S.settings.close=+sClose.value;
+  S.settings.start=a; S.settings.end=b; S.settings.link=document.getElementById('sLink').value.trim();
+  save(); render(); dlgS.close();
+};
+document.getElementById('sExport').onclick=()=>{
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='予約表バックアップ_'+ymd(new Date())+'.json'; a.click();
+};
+document.getElementById('sImport').onclick=()=>document.getElementById('sFile').click();
+document.getElementById('sFile').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  f.text().then(t=>{ try{ const d=JSON.parse(t); if(!confirm('今のデータをバックアップの内容に置き換えます。よろしいですか？')) return; S=merge(d); save(); render(); dlgS.close(); }catch(err){ alert('読み込めませんでした：'+err.message); } });
+  e.target.value='';
+};
+
+// ---- 週の移動 ----
+document.getElementById('prev').onclick=()=>setDay(addDays(dayMode()?curDay:weekStart, dayMode()?-1:-7));
+document.getElementById('next').onclick=()=>setDay(addDays(dayMode()?curDay:weekStart, dayMode()?1:7));
+document.getElementById('thisw').onclick=()=>setDay(new Date());
+document.getElementById('jump').onchange=e=>{ if(e.target.value) setDay(parse(e.target.value)); };
+document.getElementById('btnView').onclick=()=>{ mobileView = mobileView==='day'?'week':'day'; render(); };
+document.getElementById('btnPrint').onclick=()=>window.print();
+
+// ---- 患者別 受診履歴・今後の予定 ----
+const dlgA=document.getElementById('dlgA');
+function md(ds){ const d=parse(ds); return `${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})`; }
+function renderAll(){
+  const today=ymd(new Date()), q=norm(document.getElementById('aFilter').value);
+  const names=new Set(S.patients.map(p=>p.name));
+  Object.values(S.bookings).forEach(b=>names.add(b.name)); S.rules.forEach(r=>names.add(r.name));
+  const kana=n=>{ const p=S.patients.find(p=>p.name===n); return p&&p.kana||''; };
+  const rows=[...names].filter(n=>!q||norm(n).includes(q)||norm(kana(n)).includes(q)).map(n=>{
+    const list=history(n), past=list.filter(x=>x.date<today), done=past.filter(x=>!x.ns);
+    const fut=list.filter(x=>x.date>=today).reverse();
+    const rules=S.rules.filter(r=>r.name===n && (!r.to||r.to>=today));
+    const types=new Set(done.map(x=>x.type));
+    return {n, k:kana(n), done:done.length, ns:past.length-done.length, last:done[0], first:done[done.length-1], fut, rules, visit:types.has('visit')};
+  }).sort((a,b)=>(a.k||a.n).localeCompare(b.k||b.n,'ja'));
+  document.getElementById('aList').innerHTML = rows.length
+    ? '<table class="dtable"><tr><th>氏名</th><th>受診回数</th><th>受診なし</th><th>初回</th><th>前回</th><th>次回</th><th>今後の予定</th><th>固定</th></tr>'
+      + rows.map(r=>`<tr><td><a href="#" data-hn="${esc(r.n)}">${esc(r.n)}</a>${r.k?`<br><small style="color:var(--sub)">${esc(r.k)}</small>`:''}</td>`
+        + `<td class="c"><b>${r.done}</b></td><td class="c" style="color:#b42318">${r.ns||''}</td>`
+        + `<td>${r.first?md(r.first.date):''}</td><td>${r.last?md(r.last.date):''}</td>`
+        + `<td style="color:var(--accent);font-weight:bold">${r.fut[0]?md(r.fut[0].date)+' '+r.fut[0].h+':00':''}</td>`
+        + `<td style="font-size:12px;color:var(--accent)">${r.fut.length?r.fut.slice(0,6).map(x=>md(x.date)+' '+x.h+':00'+(x.type==='visit'?'(往)':'')).join('<br>')+(r.fut.length>6?`<br>ほか${r.fut.length-6}件`:''):'<span style="color:#b42318">予定なし</span>'}</td>`
+        + `<td style="font-size:12px">${r.rules.map(x=>`${everyText(x)} ${DOW[x.dow]}曜 ${x.hour}:00`).join('<br>')}</td></tr>`).join('')
+      + '</table>'
+    : '<div class="note">患者がいません。</div>';
+}
+document.getElementById('btnAll').onclick=()=>{ document.getElementById('aFilter').value=''; renderAll(); dlgA.showModal(); };
+document.getElementById('aFilter').oninput=renderAll;
+document.getElementById('aList').addEventListener('click',e=>{ const a=e.target.closest('[data-hn]'); if(!a) return; e.preventDefault(); openHist(a.dataset.hn); });
+
+// ---- スマホ閲覧用の書き出し(プログラムを含まない、表示だけのHTML) ----
+const dlgE=document.getElementById('dlgE');
+document.getElementById('btnExport').onclick=()=>dlgE.showModal();
+document.getElementById('eGo').onclick=()=>{
+  const n=+document.getElementById('eWeeks').value, withMemo=document.getElementById('eMemo').checked;
+  const t0=new Date(), now=`${t0.getMonth()+1}/${t0.getDate()} ${t0.getHours()}:${String(t0.getMinutes()).padStart(2,'0')}`;
+  const mark=x=>(x.kind==='rule'?'<b class="t f">固</b>':'')+(x.type==='new'?'<b class="mr">新</b>':x.type==='visit'?'<b class="t v">往</b>':'<b class="kk">既</b>');
+  let body='';
+  for(let i=0;i<n;i++){
+    const d=addDays(t0,i), ds=ymd(d), list=dayList(ds).filter(x=>!x.ns);
+    const memo=S.dayMemos[ds];
+    body+=`<section${i===0?' class="today"':''}><h2 class="${d.getDay()===0?'sun':d.getDay()===6?'sat':''}">${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]})${i===0?' <span class="tb">今日</span>':''}<small>${list.length}人</small></h2>`;
+    if(withMemo&&memo) body+=`<div class="dm">${esc(memo)}</div>`;
+    body+= list.length ? list.map(x=>`<div class="r ${x.type||'normal'}${isTravel(ds,x.h)?' cf':''}"><span class="tm">${x.h}:00${x.s?'<br><small>2人目</small>':''}</span><span class="nm">${isTravel(ds,x.h)?'<b class="w">！</b>':''}${mark(x)}${esc(x.name)}${withMemo&&x.memo?`<small>${esc(x.memo)}</small>`:''}</span></div>`).join('') : '<div class="no">予約なし</div>';
+    body+='</section>';
+  }
+  const html=`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>予約表(閲覧用)${now}</title><style>
+body{margin:0;background:#f6f7f9;color:#1d2430;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;font-size:15px}
+header{background:#fff;padding:10px 14px;border-bottom:1px solid #cfd5dd;position:sticky;top:0}
+header h1{font-size:17px;margin:0}header p{margin:2px 0 0;font-size:12px;color:#5d6878}
+.lg{font-size:12px;color:#5d6878;padding:6px 14px;display:flex;flex-wrap:wrap;gap:8px}
+section{background:#fff;margin:10px 10px;border:1px solid #cfd5dd;border-radius:8px;overflow:hidden}
+section.today{border:2px solid #e0a800}
+h2{font-size:15px;margin:0;padding:8px 12px;background:#eef1f5;display:flex;align-items:center;gap:6px}
+h2 small{margin-left:auto;font-weight:normal;color:#5d6878}h2.sun{color:#c0262d}h2.sat{color:#1d5fc0}
+.tb{background:#e0a800;color:#fff;font-size:11px;border-radius:4px;padding:1px 6px}
+.dm{padding:6px 12px;font-size:13px;background:#fffbe6;border-top:1px solid #eee}
+.r{display:flex;gap:10px;padding:8px 12px;border-top:1px solid #e7ebf0;border-left:5px solid}
+.r.normal{border-left-color:#1f5fd1;background:#f2f7ff}.r.new{border-left-color:#d42a2a;background:#fff3f3}.r.visit{border-left-color:#e0a800;background:#fffbe0}
+.r.cf{outline:2px solid #d42a2a;outline-offset:-2px}
+.tm{width:48px;flex:none;font-weight:bold}.tm small{font-weight:normal;color:#5d6878;font-size:11px}
+.nm{font-weight:bold}.nm small{display:block;font-weight:normal;color:#5d6878;font-size:12px}
+.no{padding:8px 12px;color:#9aa3af;font-size:13px;border-top:1px solid #e7ebf0}
+.t,.kk,.mr,.w{display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-right:4px;vertical-align:2px}
+.t{color:#fff;border-radius:3px;padding:0 3px}.t.f{background:#374151}.t.v{background:#e0a800;color:#3b2f00}
+.kk{width:16px;height:16px;border:1.5px solid #1f5fd1;color:#1f5fd1;border-radius:2px;background:#fff}
+.mr{width:16px;height:16px;border:1.5px solid #d42a2a;color:#d42a2a;border-radius:50%;background:#fff}
+.w{width:16px;height:16px;border-radius:50%;background:#d42a2a;color:#fff;font-weight:bold;font-size:11px}
+footer{font-size:11px;color:#9aa3af;text-align:center;padding:10px 10px 24px}
+</style></head><body><header><h1>予約表(閲覧用)</h1><p>${now} 時点・${n/7}週間分。変更があったときは最新のファイルを見てください。</p></header>
+<div class="lg"><span><b class="kk">既</b>既存</span><span><b class="mr">新</b>新規</span><span><b class="t v">往</b>往診</span><span><b class="t f">固</b>固定客</span><span><b class="w">！</b>往診の前後と重なり</span></div>
+${body}<footer>このファイルは閲覧専用です。予約の変更はパソコンの予約表で行ってください。</footer></body></html>`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download=`予約表_スマホ用_${ymd(t0).replace(/-/g,'')}.html`;
+  a.click();
+  dlgE.close();
+};
+
+// ---- 月別受診回数 ----
+const dlgM=document.getElementById('dlgM');
+let mY, mM; // 表示中の年・月(0始まり)
+function renderMonth(){
+  const today=ymd(new Date()), per={};
+  const days=new Date(mY,mM+1,0).getDate();
+  for(let i=1;i<=days;i++){
+    const ds=ymd(new Date(mY,mM,i));
+    dayList(ds).forEach(x=>{
+      const p=per[x.name]||(per[x.name]={name:x.name,done:0,plan:0,ns:0,visit:0,days:[]});
+      if(ds>=today) p.plan++; else if(x.ns) p.ns++; else { p.done++; if(x.type==='visit') p.visit++; }
+      p.days.push({d:i,ns:x.ns,f:ds>=today});
+    });
+  }
+  const kana=n=>{ const p=S.patients.find(p=>p.name===n); return p&&p.kana||n; };
+  const list=Object.values(per).sort((a,b)=>b.done-a.done||kana(a.name).localeCompare(kana(b.name),'ja'));
+  document.getElementById('mTitle').textContent=`${mY}年${mM+1}月 の受診回数`;
+  const sum=k=>list.reduce((a,p)=>a+p[k],0);
+  document.getElementById('mSum').innerHTML = list.length ? `<b>患者 ${list.length}人</b><span>受診 延べ${sum('done')}回</span><span>(うち往診 ${sum('visit')}回)</span><span style="color:#b42318">受診なし ${sum('ns')}回</span><span style="color:var(--accent)">予定 ${sum('plan')}回</span>` : '';
+  document.getElementById('mList').innerHTML = list.length
+    ? '<table class="dtable"><tr><th>氏名</th><th>受診</th><th>うち往診</th><th>受診なし</th><th>予定</th><th>日にち</th></tr>'
+      + list.map(p=>`<tr><td><a href="#" data-hn="${esc(p.name)}">${esc(p.name)}</a></td><td class="c"><b>${p.done}</b></td><td class="c">${p.visit||''}</td><td class="c" style="color:#b42318">${p.ns||''}</td><td class="c" style="color:var(--accent)">${p.plan||''}</td><td style="font-size:12px">${p.days.map(x=>`<span style="${x.ns?'color:#b42318;text-decoration:line-through':x.f?'color:var(--accent)':''}">${x.d}日</span>`).join(' ')}</td></tr>`).join('')
+      + '</table>'
+    : '<div class="note">この月の予約はありません。</div>';
+}
+function openMonth(y,m){ const d=new Date(y,m,1); mY=d.getFullYear(); mM=d.getMonth(); renderMonth(); if(!dlgM.open) dlgM.showModal(); }
+document.getElementById('btnMonth').onclick=()=>{ const t=new Date(); openMonth(t.getFullYear(),t.getMonth()); };
+document.getElementById('mPrev').onclick=()=>openMonth(mY,mM-1);
+document.getElementById('mNext').onclick=()=>openMonth(mY,mM+1);
+document.getElementById('mList').addEventListener('click',e=>{ const a=e.target.closest('[data-hn]'); if(!a) return; e.preventDefault(); openHist(a.dataset.hn); });
+
+// ---- その日の受診者一覧 ----
+const dlgD=document.getElementById('dlgD');
+let dDate=null;
+function dayList(ds){
+  const out=[];
+  for(let t=0;t<24;t++) for(let s=0;s<2;s++){ const x=lookup(ds,t,s); if(x && x.kind!=='skipped') out.push({h:t,s,...x}); }
+  return out;
+}
+function renderDay(){
+  const d=parse(dDate), list=dayList(dDate);
+  document.getElementById('dTitle').textContent=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]}) の受診者`;
+  const ns=list.filter(x=>x.ns).length;
+  const cnt=t=>list.filter(x=>x.type===t&&!x.ns).length;
+  document.getElementById('dSum').innerHTML = list.length ? `<b>予約 ${list.length}人</b><span>受診 ${list.length-ns}人</span><span style="color:#b42318">受診なし ${ns}人</span><span>(既存 ${cnt('normal')}・新規 ${cnt('new')}・往診 ${cnt('visit')})</span>` : '';
+  document.getElementById('dList').innerHTML = list.length
+    ? '<table class="dtable"><tr><th>時間</th><th>氏名</th><th>区分</th><th>メモ</th><th>受診なし</th></tr>'
+      + list.map(x=>`<tr class="${x.ns?'ns':''}"><td>${x.h}:00${x.s?'(2人目)':''}</td><td><span class="nm">${esc(x.name)}</span>${x.kind==='rule'?' <b class="tag f">固</b>':''}</td><td>${x.type==='new'?'<b class="maru">新</b>':x.type==='visit'?'<b class="tag v">往</b>':'<b class="kaku">既</b>'}${TYPE_LABEL[x.type]||''}</td><td>${esc(x.memo||'')}</td><td class="c"><input type="checkbox" data-ns="${key(dDate,x.h,x.s)}" ${x.ns?'checked':''}></td></tr>`).join('')
+      + '</table>'
+    : '<div class="note">この日の予約はありません。</div>';
+}
+function openDay(ds){ dDate=ds; renderDay(); if(!dlgD.open) dlgD.showModal(); }
+document.getElementById('dList').addEventListener('change',e=>{
+  const k=e.target.dataset.ns; if(!k) return;
+  if(e.target.checked) S.noshow[k]=true; else delete S.noshow[k];
+  save(); renderDay(); render();
+});
+document.getElementById('dPrev').onclick=()=>openDay(ymd(addDays(parse(dDate),-1)));
+document.getElementById('dNext').onclick=()=>openDay(ymd(addDays(parse(dDate),1)));
+document.getElementById('btnToday').onclick=()=>openDay(ymd(new Date()));
+document.getElementById('grid').addEventListener('click',e=>{ const th=e.target.closest('th[data-day]'); if(th) openDay(th.dataset.day); });
+
+render();
+const dlgG=document.getElementById('dlgG');
+document.getElementById('btnGuide').onclick=()=>dlgG.showModal();
+document.getElementById('btnReset').onclick=()=>{ if(confirm('入力した内容を消して、見本データに戻します。よろしいですか？')){ S=demoData(); save(); setDay(new Date()); } };
+if(typeof firstOpen!=='undefined') dlgG.showModal();
+</script>
+</body>
+</html>
