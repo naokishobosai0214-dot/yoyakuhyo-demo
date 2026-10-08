@@ -3,6 +3,12 @@
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="予約表">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
 <title>週間予約表(お試し版)</title>
 <style>
 :root{
@@ -88,6 +94,36 @@ td:hover .add2{opacity:1}
   .db{padding:10px 12px}
 }
 .slot:hover{background:#f0f5ff}
+/* ---- iPad・タブレット(701〜1180px)：週の表を横スクロールなしで収める ---- */
+@media (min-width:701px) and (max-width:1180px){
+  header{padding:8px 12px}
+  .wrap{padding:0 8px 20px}
+  table.week{min-width:0}
+  th.time{width:46px;padding:4px 4px}
+  thead th{font-size:12px;padding:5px 2px}
+  .bk{font-size:12px;padding:2px 3px}
+  .bk .memo{font-size:10px}
+}
+/* ---- 指で操作する画面(iPad・スマホ) ---- */
+@media (pointer:coarse){
+  html{-webkit-text-size-adjust:100%}
+  body{-webkit-tap-highlight-color:rgba(47,111,214,.15)}
+  button,.slot,th.day,a,label{touch-action:manipulation}
+  button{min-height:40px;padding:8px 12px}
+  .add2{min-height:0;padding:3px 7px;font-size:12px}
+  input[type=text],input[type=url],input[type=date],input[type=number],textarea,select{font-size:16px}
+  td.memo textarea{font-size:16px}
+  .radios label{min-height:36px}
+  input[type=radio],input[type=checkbox]{width:22px;height:22px}
+  .sug div{padding:10px 10px}
+  .hist .hr{padding:8px 8px}
+  #plist div{padding:8px 8px}
+  .slot:hover{background:transparent}
+  .slot:active{background:#e3ecfb}
+  dialog{max-height:calc(100vh - 32px);overflow:auto;-webkit-overflow-scrolling:touch}
+}
+.legend .show-touch{display:none}
+@media (hover:none),(pointer:coarse){ .legend .show-touch{display:inline-flex} .legend .hide-touch{display:none} }
 .slot .lbl{position:absolute;right:3px;bottom:1px;font-size:10px;color:#b8c0cc}
 .bk{border-radius:4px;border-left:4px solid;padding:2px 4px;font-size:12px;line-height:1.3;word-break:break-all}
 .bk.normal{background:var(--normal);border-color:var(--normal-b)}
@@ -186,7 +222,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span><b class="tag f">固</b>固定客(毎週自動で表示)</span>
   <span><i class="hsw closedsw"></i>営業時間外</span>
   <span><i class="hsw travelsw"></i>往診の前後1時間(受診不可)</span>
-  <span>1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。</span>
+  <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。</span>
 </div>
 <div class="wrap"><table id="grid"></table></div>
 
@@ -199,7 +235,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>予約を入れる</b>：空いているマスをクリック → 氏名・区分(既存／新規／往診)・メモを入れて保存。氏名は「やま」などふりがなでも候補が出ます。</li>
       <li><b>区分の色</b>：<b class="kaku">既</b>既存=青、<b class="maru">新</b>新規=赤、<b class="tag v">往</b>往診=黄。</li>
       <li><b>固定客</b>：予約画面で「固定客にする」→「毎週」か「◯週間に1回」を選ぶと、先の週にも自動で入ります(<b class="tag f">固</b>の印)。「この日だけ休み」もできます。</li>
-      <li><b>2人目</b>：1時間1人が基本。予約の入ったマスにマウスを乗せると「＋2人目」が出ます。</li>
+      <li><b>2人目</b>：1時間1人が基本。予約の入ったマスにマウスを乗せると「＋2人目」が出ます(iPad・スマホでは最初から出ています)。</li>
       <li><b>網掛け</b>：灰色の斜線＝営業時間外(8〜20時の外)、黄色の格子＝往診の前後1時間。黄色の枠に予約が重なると <b class="warn" style="animation:none">！</b> で知らせます(今週の木曜14時を見てください)。</li>
       <li><b>その日の受診者一覧</b>：表の日付をクリック、または「今日の受診者」。受診しなかった人だけ「受診なし」にチェックします。</li>
       <li><b>受診履歴</b>：予約をクリックすると、その人の受診履歴と月ごとの回数が下に出ます。</li>
@@ -207,6 +243,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>日付</b>は自動。「◀前の週／次の週▶」で移動、「印刷」でA4横に印刷できます。</li>
       <li><b>スマホ用に書き出す</b>：今日から1〜4週間分の予約を、スマホで見るだけのファイルにします。LINEやメールでスマホに送って開きます。</li>
       <li><b>スマホ</b>では1日ずつ表示します(「◀前の日／次の日▶」で移動、「週で見る」で1週間表示に切替)。上のボタンの列は横にスライドできます。</li>
+      <li><b>iPad</b>では縦置きでも1週間が画面に収まります。Safariの共有ボタン →「ホーム画面に追加」で、アプリのように開けます。</li>
     </ol>
     <div class="note">データはこのパソコンのこのブラウザの中だけに保存されます(インターネットには送られません)。<br>まだ入っていないもの：診療報酬システムとの連携、診療報酬システムとの齟齬チェック。</div>
   </div>
