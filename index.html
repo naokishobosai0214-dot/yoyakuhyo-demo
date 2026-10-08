@@ -12,6 +12,7 @@
 <title>週間予約表(お試し版)</title>
 <style>
 :root{
+  --off:#fde4e7; --off-t:#c0262d;
   --bg:#f6f7f9; --panel:#fff; --line:#cfd5dd; --line2:#e7ebf0; --text:#1d2430; --sub:#5d6878;
   --accent:#2f6fd6; --today:#fff8db;
   --fixed:#eef0f3; --fixed-b:#374151;
@@ -36,6 +37,27 @@ button.danger{color:#b42318;border-color:#f0b4ae}
 .dtable .dn{font-size:11px;color:#9aa3af}
 .todo{color:#b42318;font-weight:bold}
 body.dragging::after{content:"ここに離すと iPad のデータを読み込みます";position:fixed;inset:12px;border:4px dashed #7c3aed;border-radius:14px;background:rgba(245,240,255,.85);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;color:#5b21b6;z-index:100;pointer-events:none}
+td.off,th.day.off{background-color:var(--off)}
+th.day .hol{display:block;font-size:10px;color:var(--off-t);font-weight:bold}
+.offsw{background:var(--off)}
+/* 患者の受診カレンダー */
+.hcal{padding:6px 8px 8px;border-bottom:1px solid var(--line2)}
+.hcal .cn{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.hcal .cn b{flex:1;text-align:center;font-size:13px}
+.hcal .cn button{padding:2px 10px;min-height:0}
+.hcal table{min-width:0;width:100%;table-layout:fixed;border-collapse:collapse;background:none}
+.hcal th,.hcal td{border:none;text-align:center;padding:1px 0;font-size:12px;vertical-align:middle}
+.hcal th{color:var(--sub);font-weight:normal;font-size:11px}
+.hcal th:first-child,.hcal td.hd{color:#c0262d}
+.hcal th:last-child{color:#1d5fc0}
+.hcal td span{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%}
+.hcal td.td span{box-shadow:inset 0 0 0 2px #e0a800}
+.hcal td.v span{color:#fff;font-weight:bold;cursor:pointer}
+.hcal td.v.normal span{background:var(--normal-b)} .hcal td.v.new span{background:var(--new-b)} .hcal td.v.visit span{background:var(--visit-b);color:#3b2f00}
+.hcal td.p span{border:2px solid var(--accent);color:var(--accent);font-weight:bold;cursor:pointer}
+.hcal td.n span{background:#e5e7eb;color:#9aa3af;text-decoration:line-through;cursor:pointer}
+.hcal .ck{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--sub);margin-top:4px}
+.hcal .ck i{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:2px}
 .legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 16px;font-size:12px;color:var(--sub)}
 .legend span{display:inline-flex;align-items:center;gap:4px}
 .sw{width:14px;height:14px;border-radius:3px;border-left:4px solid}
@@ -230,6 +252,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span><i class="sw" style="background:var(--visit);border-color:var(--visit-b)"></i><b class="tag v">往</b>往診(黄)</span>
   <span><b class="tag f">固</b>固定客(毎週自動で表示)</span>
   <span><i class="hsw closedsw"></i>営業時間外</span>
+  <span><i class="hsw offsw"></i>休診日(日曜・祝日)</span>
   <span><i class="hsw travelsw"></i>往診の前後1時間(受診不可)</span>
   <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。</span>
 </div>
@@ -402,6 +425,10 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
         <select id="sOpen"></select> 時 〜 <select id="sClose"></select> 時
       </span>
     </label>
+    <div class="row" style="display:grid;gap:4px;font-size:13px">休診日(枠に色が付きます。予約は入れられます)
+      <span id="sOffDows" style="display:flex;gap:10px;flex-wrap:wrap"></span>
+      <label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" id="sHol"> 祝日も休診にする</label>
+    </div>
     <label class="row">表示する時間帯
       <span style="display:flex;gap:6px;align-items:center">
         <select id="sStart"></select> 時 〜 <select id="sEnd"></select> 時
@@ -476,8 +503,28 @@ function setDay(d){ curDay=new Date(d); weekStart=sunday(curDay); render(); }
 mq.addEventListener('change',()=>render());
 let cur = null; // 編集中のマス
 
-function blank(){ return {bookings:{}, rules:[], skips:{}, dayMemos:{}, noshow:{}, patients:[], settings:{start:6,end:23,open:8,close:20,link:''}}; }
+function blank(){ return {bookings:{}, rules:[], skips:{}, dayMemos:{}, noshow:{}, patients:[], settings:{start:6,end:23,open:8,close:20,link:'',offDows:[0],holidayOff:true}}; }
 function merge(d){ const b=blank(); return Object.assign(b, d, {settings:Object.assign(b.settings, d.settings||{})}); }
+// ---- 日本の祝日(2020年以降の法律に合わせて計算。振替休日・国民の休日も) ----
+const HOL_CACHE={};
+function holidays(y){
+  if(HOL_CACHE[y]) return HOL_CACHE[y];
+  const m={}, set=(mo,d,n)=>{ m[ymd(new Date(y,mo-1,d))]=n; };
+  const nthMon=(mo,n)=>{ const f=new Date(y,mo-1,1).getDay(); return 1+((8-f)%7)+(n-1)*7; };
+  const eq=(base)=>Math.floor(base+0.242194*(y-1980)-Math.floor((y-1980)/4));
+  set(1,1,'元日'); set(1,nthMon(1,2),'成人の日'); set(2,11,'建国記念の日'); set(2,23,'天皇誕生日');
+  set(3,eq(20.8431),'春分の日'); set(4,29,'昭和の日'); set(5,3,'憲法記念日'); set(5,4,'みどりの日'); set(5,5,'こどもの日');
+  set(7,nthMon(7,3),'海の日'); set(8,11,'山の日'); set(9,nthMon(9,3),'敬老の日'); set(9,eq(23.2488),'秋分の日');
+  set(10,nthMon(10,2),'スポーツの日'); set(11,3,'文化の日'); set(11,23,'勤労感謝の日');
+  // 国民の休日(祝日にはさまれた平日)
+  Object.keys(m).forEach(k=>{ const d2=ymd(addDays(parse(k),2)), d1=ymd(addDays(parse(k),1)); if(m[d2] && !m[d1] && parse(d1).getDay()!==0) m[d1]='国民の休日'; });
+  // 振替休日(日曜の祝日の次の、祝日でない日)
+  Object.keys(m).sort().forEach(k=>{ if(parse(k).getDay()!==0) return; let d=addDays(parse(k),1); while(m[ymd(d)]) d=addDays(d,1); m[ymd(d)]='振替休日'; });
+  return HOL_CACHE[y]=m;
+}
+function holidayName(ds){ return holidays(+ds.slice(0,4))[ds]||''; }
+// 休診日(曜日の設定 or 祝日)
+function isOff(ds){ const st=S.settings; return (st.offDows||[]).includes(parse(ds).getDay()) || (st.holidayOff!==false && !!holidayName(ds)); }
 function isOpen(t){ return t>=S.settings.open && t<S.settings.close; }
 // 往診の前後1時間(その時間の前後どちらかの枠に往診が入っている。受診なしの往診は除く)
 function isTravel(ds,t){
@@ -549,7 +596,8 @@ function render(){
   days.forEach(d=>{
     const ds=ymd(d); let n=0;
     for(let t=S.settings.start;t<=S.settings.end;t++) for(let s=0;s<2;s++){ const x=lookup(ds,t,s); if(x && x.kind!=='skipped') n++; }
-    h += `<th class="day ${d.getDay()===0?'sun':d.getDay()===6?'sat':''} ${ds===today?'today':''}" data-day="${ds}" title="この日の受診者一覧を開く">${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]})<br><span class="count">${n}件</span> <span class="dl">一覧▶</span></th>`;
+    const hn=holidayName(ds), off=isOff(ds);
+    h += `<th class="day ${d.getDay()===0||hn?'sun':d.getDay()===6?'sat':''} ${ds===today?'today':off?'off':''}" data-day="${ds}" title="この日の受診者一覧を開く">${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]})${hn||off?`<span class="hol">${hn?esc(hn)+'・':''}${off?'休診':''}</span>`:'<br>'}<span class="count">${n}件</span> <span class="dl">一覧▶</span></th>`;
   });
   h += '</tr></thead><tbody>';
   for(let t=S.settings.start;t<=S.settings.end;t++){
@@ -560,7 +608,7 @@ function render(){
       const x0=lookup(ds,t,0), x1=lookup(ds,t,1);
       const two = !!x1; // 2人目は入っているときだけ表示
       const tv = isTravel(ds,t);
-      h += `<td class="${tv?'travel':isOpen(t)&&ds===today?'today':cl}" ${tv?'title="往診の前後1時間(受診不可)"':''}><div class="slots ${two?'two':''}">`;
+      h += `<td class="${tv?'travel':isOff(ds)?'off':isOpen(t)&&ds===today?'today':cl}" ${tv?'title="往診の前後1時間(受診不可)"':''}><div class="slots ${two?'two':''}">`;
       h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="0">${cellHtml(x0,tv)}${two?'<span class="lbl">1</span>':''}`;
       if(!two && x0 && x0.kind!=='skipped') h += `<button type="button" class="add2" data-d="${ds}" data-h="${t}" title="この時間に2人目を入れる">＋2人目</button>`;
       h += '</div>';
@@ -741,6 +789,30 @@ function monthLine(done){
   return `<div class="sec">月ごとの受診回数</div><div style="padding:4px 8px;display:flex;flex-wrap:wrap;gap:4px 12px">`
     + ks.map(k=>`<span>${+k.slice(0,4)}年${+k.slice(5)}月 <b>${m[k]}回</b></span>`).join('') + '</div>';
 }
+// 患者の受診カレンダー(1か月。◀▶で月を移動。日をクリックでその週へ)
+function calHtml(name,ym){
+  const list=history(name), today=ymd(new Date());
+  const [y,m]=ym.split('-').map(Number), first=new Date(y,m-1,1), days=new Date(y,m,0).getDate();
+  const by={}; list.forEach(x=>{ if(x.date.startsWith(ym) && (!by[x.date] || by[x.date].ns)) by[x.date]=x; });
+  const cnt=list.filter(x=>x.date.startsWith(ym) && x.date<today && !x.ns).length;
+  let h=`<div class="hcal" data-cal="${esc(name)}" data-ym="${ym}"><div class="cn"><button type="button" data-calnav="-1">◀</button><b>${y}年${m}月　受診 ${cnt}回</b><button type="button" data-calnav="1">▶</button></div><table><tr>${DOW.map(w=>`<th>${w}</th>`).join('')}</tr><tr>`;
+  for(let i=0;i<first.getDay();i++) h+='<td></td>';
+  for(let d=1;d<=days;d++){
+    const ds=ymd(new Date(y,m-1,d)), x=by[ds], dow=(first.getDay()+d-1)%7;
+    if(d>1 && dow===0) h+='</tr><tr>';
+    const c=[holidayName(ds)||dow===0?'hd':'', ds===today?'td':''];
+    let tip='';
+    if(x){ c.push(x.ns?'n':x.date>=today?'p':'v', x.type||'normal'); tip=`${x.h}:00 ${x.ns?'受診なし':x.date>=today?'予定':'受診'}・${TYPE_LABEL[x.type]||''}`; }
+    h+=`<td class="${c.join(' ')}" ${x?`data-go="${ds}" title="${tip}"`:''}><span>${d}</span></td>`;
+  }
+  h+='</tr></table><div class="ck"><span><i style="background:var(--normal-b)"></i>受診(既存)</span><span><i style="background:var(--new-b)"></i>新規</span><span><i style="background:var(--visit-b)"></i>往診</span><span><i style="border:2px solid var(--accent)"></i>予定</span><span><i style="background:#e5e7eb"></i>受診なし</span><span>日付を押すとその週へ</span></div></div>';
+  return h;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-calnav]'); if(!b) return;
+  const c=b.closest('.hcal'), [y,m]=c.dataset.ym.split('-').map(Number), d=new Date(y,m-1+(+b.dataset.calnav),1);
+  c.outerHTML=calHtml(c.dataset.cal, ymd(d).slice(0,7));
+});
 function histHtml(name){
   if(!name) return '';
   const list=history(name), today=ymd(new Date());
@@ -748,7 +820,7 @@ function histHtml(name){
   const row=x=>{ const d=parse(x.date); return `<div class="hr ${x.date>=today?'future':''} ${x.ns?'ns':''}" data-go="${x.date}"><span>${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})</span><span>${x.h}:00${x.s?'(2人目)':''}</span><span>${x.ns?'<span class="nsl">受診なし</span>　':''}${TYPE_LABEL[x.type]||''}${x.fixed?'・固定':''}${x.memo?'　'+esc(x.memo):''}</span></div>`; };
   const last = done[0] ? (d=>`${d.getMonth()+1}/${d.getDate()}`)(parse(done[0].date)) : 'なし';
   const nsn = past.length-done.length;
-  return `<div class="hist"><div class="hh"><span>${esc(name)} さんの受診履歴</span><span>受診 ${done.length}回${nsn?`(受診なし ${nsn}回)`:''}・前回 ${last}</span></div><div class="hl">`
+  return `<div class="hist"><div class="hh"><span>${esc(name)} さんの受診履歴</span><span>受診 ${done.length}回${nsn?`(受診なし ${nsn}回)`:''}・前回 ${last}</span></div>${calHtml(name, (dlg.open&&cur&&cur.date||today).slice(0,7))}<div class="hl">`
     + (fut.length?`<div class="sec">今後の予約</div>`+fut.map(row).join(''):'')
     + monthLine(done)
     + `<div class="sec">これまで(新しい順)</div>` + (past.length?past.map(row).join(''):'<div class="hr" style="cursor:default">まだありません</div>')
@@ -759,7 +831,7 @@ function renderHist(){ document.getElementById('hist').innerHTML = histHtml(fNam
 function goWeek(e,dlgEl){ const r=e.target.closest('[data-go]'); if(!r) return; setDay(parse(r.dataset.go)); dlgEl.close(); }
 document.getElementById('hist').addEventListener('click',e=>goWeek(e,dlg));
 const dlgH=document.getElementById('dlgH');
-document.getElementById('histP').addEventListener('click',e=>{ goWeek(e,dlgH); dlgP.close(); });
+document.getElementById('histP').addEventListener('click',e=>{ if(!e.target.closest('[data-go]')) return; goWeek(e,dlgH); dlgP.close(); });
 function openHist(name){ document.getElementById('dlgHTitle').textContent=name+' さんの受診履歴'; document.getElementById('histP').innerHTML=histHtml(name); dlgH.showModal(); }
 
 // ---- 患者名簿 ----
@@ -801,11 +873,13 @@ const sStart=document.getElementById('sStart'), sEnd=document.getElementById('sE
 const sOpen=document.getElementById('sOpen'), sClose=document.getElementById('sClose');
 for(let i=0;i<24;i++){ sStart.add(new Option(i,i)); sEnd.add(new Option(i,i)); sOpen.add(new Option(i,i)); }
 for(let i=1;i<=24;i++) sClose.add(new Option(i,i));
-document.getElementById('btnSettings').onclick=()=>{ sStart.value=S.settings.start; sEnd.value=S.settings.end; sOpen.value=S.settings.open; sClose.value=S.settings.close; document.getElementById('sLink').value=S.settings.link||''; dlgS.showModal(); };
+function renderOffDows(){ document.getElementById('sOffDows').innerHTML=DOW.map((w,i)=>`<label style="display:inline-flex;gap:3px;align-items:center"><input type="checkbox" data-dow="${i}" ${(S.settings.offDows||[]).includes(i)?'checked':''}>${w}</label>`).join(''); document.getElementById('sHol').checked=S.settings.holidayOff!==false; }
+document.getElementById('btnSettings').onclick=()=>{ renderOffDows(); sStart.value=S.settings.start; sEnd.value=S.settings.end; sOpen.value=S.settings.open; sClose.value=S.settings.close; document.getElementById('sLink').value=S.settings.link||''; dlgS.showModal(); };
 document.getElementById('sSave').onclick=()=>{
   const a=+sStart.value,b=+sEnd.value; if(a>b){ alert('開始は終了より前にしてください'); return; }
   if(+sOpen.value>=+sClose.value){ alert('営業時間の開始は終了より前にしてください'); return; }
   S.settings.open=+sOpen.value; S.settings.close=+sClose.value;
+  S.settings.offDows=[...document.querySelectorAll('#sOffDows input:checked')].map(x=>+x.dataset.dow); S.settings.holidayOff=document.getElementById('sHol').checked;
   S.settings.start=a; S.settings.end=b; S.settings.link=document.getElementById('sLink').value.trim();
   save(); render(); dlgS.close();
 };
