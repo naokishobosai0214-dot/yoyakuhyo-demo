@@ -30,6 +30,12 @@ button:hover{background:#eef3fb}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 button.danger{color:#b42318;border-color:#f0b4ae}
 .spacer{flex:1}
+.robar{margin:8px 16px 0;padding:8px 12px;border:2px solid #7c3aed;background:#f5f0ff;border-radius:8px;font-size:13px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.robar b{color:#5b21b6}
+.dtable tr.done td{background:#eefaf0}
+.dtable .dn{font-size:11px;color:#9aa3af}
+.todo{color:#b42318;font-weight:bold}
+body.dragging::after{content:"ここに離すと iPad のデータを読み込みます";position:fixed;inset:12px;border:4px dashed #7c3aed;border-radius:14px;background:rgba(245,240,255,.85);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;color:#5b21b6;z-index:100;pointer-events:none}
 .legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 16px;font-size:12px;color:var(--sub)}
 .legend span{display:inline-flex;align-items:center;gap:4px}
 .sw{width:14px;height:14px;border-radius:3px;border-left:4px solid}
@@ -203,6 +209,9 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span id="range"></span>
   <span class="spacer"></span>
   <div class="tools">
+  <button id="btnSend" class="primary">PCへ送る</button>
+  <button id="btnRecv">iPadのデータを読み込む</button>
+  <input type="file" id="rFile" accept=".json,.txt,application/json,text/plain" hidden>
   <button id="btnToday">今日の受診者</button>
   <button id="btnMonth">月別受診回数</button>
   <button id="btnAll">患者別 履歴・予定</button>
@@ -224,6 +233,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span><i class="hsw travelsw"></i>往診の前後1時間(受診不可)</span>
   <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。</span>
 </div>
+<div id="roBar" class="robar" hidden><b>閲覧専用(iPadから受け取ったデータ)</b><span id="roInfo"></span><span class="spacer"></span><span class="note">予約の入力・変更は iPad でしてください。報酬システムの「入力済み」チェックだけはここで付けられます。</span><button type="button" id="roOff">このPCでも入力する</button></div>
 <div class="wrap"><table id="grid"></table></div>
 
 <!-- お試し版の見どころ -->
@@ -244,6 +254,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>スマホ用に書き出す</b>：今日から1〜4週間分の予約を、スマホで見るだけのファイルにします。LINEやメールでスマホに送って開きます。</li>
       <li><b>スマホ</b>では1日ずつ表示します(「◀前の日／次の日▶」で移動、「週で見る」で1週間表示に切替)。上のボタンの列は横にスライドできます。</li>
       <li><b>iPad</b>では縦置きでも1週間が画面に収まります。Safariの共有ボタン →「ホーム画面に追加」で、アプリのように開けます。</li>
+      <li><b>iPad → PC</b>：iPadで「PCへ送る」→ LINEの自分用トーク・メール・USBメモリなどでPCへ。PCでは「iPadのデータを読み込む」(またはファイルを画面にドラッグ)。PCは閲覧専用になり、受診者一覧に「報酬入力済」のチェック欄が出ます(紫の帯の「このPCでも入力する」で元に戻せます)。</li>
     </ol>
     <div class="note">データはこのパソコンのこのブラウザの中だけに保存されます(インターネットには送られません)。<br>まだ入っていないもの：診療報酬システムとの連携、診療報酬システムとの齟齬チェック。</div>
   </div>
@@ -363,6 +374,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
     <div class="dsum" id="dSum"></div>
     <div id="dList"></div>
     <div class="note">受診しなかった人だけ「受診なし」にチェックを入れてください。チェックはその場で保存されます。</div>
+    <div class="note" id="dDoneNote" hidden>「報酬入力済」は、診療報酬システムに入力し終えた人にチェックします。このPCだけに保存され、iPadのデータを読み込み直しても消えません。</div>
   </div>
   <div class="df"><button type="button" onclick="dlgD.close()">閉じる</button></div>
 </dialog>
@@ -476,7 +488,17 @@ function load(){
   try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) return merge(s); }catch(e){}
   return blank();
 }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ alert('保存できませんでした(ブラウザの保存領域が使えません)。バックアップを保存してください。'); } }
+// iPadから受け取ったPCは閲覧専用(予約を変えても次の読み込みで消えるため)
+const MODE_KEY=KEY+'_pc', DONE_KEY=KEY+'_done';
+function roMeta(){ try{ return JSON.parse(localStorage.getItem(MODE_KEY)); }catch(e){ return null; } }
+function isRO(){ return !!roMeta(); }
+let DONE={}; try{ DONE=JSON.parse(localStorage.getItem(DONE_KEY))||{}; }catch(e){}
+function saveDone(){ try{ localStorage.setItem(DONE_KEY, JSON.stringify(DONE)); }catch(e){} }
+function save(){
+  if(isRO()){ alert('このPCは閲覧専用です(iPadから受け取ったデータ)。予約の入力・変更は iPad でしてください。\nこのPCで入力したいときは、上の紫の帯の「このPCでも入力する」を押してください。'); S=load(); render(); return; }
+  saveRaw();
+}
+function saveRaw(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ alert('保存できませんでした(ブラウザの保存領域が使えません)。バックアップを保存してください。'); } }
 
 function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function parse(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
@@ -548,15 +570,18 @@ function render(){
     h += '</tr>';
   }
   h += '<tr><th class="time memoh">MEMO</th>';
-  days.forEach(d=>{ const ds=ymd(d); h += `<td class="memo ${ds===today?'today':''}"><textarea data-memo="${ds}" placeholder="この日のメモ">${esc(S.dayMemos[ds]||'')}</textarea></td>`; });
+  days.forEach(d=>{ const ds=ymd(d); h += `<td class="memo ${ds===today?'today':''}"><textarea data-memo="${ds}" placeholder="${isRO()?'':'この日のメモ'}" ${isRO()?'readonly':''}>${esc(S.dayMemos[ds]||'')}</textarea></td>`; });
   h += '</tr></tbody>';
   document.getElementById('grid').innerHTML = h;
+  const m=roMeta(); document.getElementById('roBar').hidden=!m;
+  if(m) document.getElementById('roInfo').textContent=`iPadで送った日時：${m.sentAt||'不明'}　読み込んだ日時：${m.loadedAt}`;
 }
 
 document.getElementById('grid').addEventListener('click',e=>{
   const a2 = e.target.closest('.add2');
   if(a2){ openSlot(a2.dataset.d, +a2.dataset.h, 1); return; }
   const el = e.target.closest('.slot'); if(!el) return;
+  if(isRO() && !el.querySelector('.bk')){ alert('このPCは閲覧専用です。予約の入力は iPad でしてください。'); return; }
   openSlot(el.dataset.d, +el.dataset.h, +el.dataset.s);
 });
 document.getElementById('grid').addEventListener('input',e=>{
@@ -927,14 +952,18 @@ function renderDay(){
   const ns=list.filter(x=>x.ns).length;
   const cnt=t=>list.filter(x=>x.type===t&&!x.ns).length;
   document.getElementById('dSum').innerHTML = list.length ? `<b>予約 ${list.length}人</b><span>受診 ${list.length-ns}人</span><span style="color:#b42318">受診なし ${ns}人</span><span>(既存 ${cnt('normal')}・新規 ${cnt('new')}・往診 ${cnt('visit')})</span>` : '';
+  const ro=isRO(); document.getElementById('dDoneNote').hidden=!ro;
+  if(ro && list.length){ const left=list.filter(x=>!x.ns && !DONE[key(dDate,x.h,x.s)]).length; document.getElementById('dSum').innerHTML += left ? `<span class="todo">報酬システム未入力 ${left}人</span>` : `<span style="color:#15803d;font-weight:bold">報酬システム 全員入力済み</span>`; }
   document.getElementById('dList').innerHTML = list.length
-    ? '<table class="dtable"><tr><th>時間</th><th>氏名</th><th>区分</th><th>メモ</th><th>受診なし</th></tr>'
-      + list.map(x=>`<tr class="${x.ns?'ns':''}"><td>${x.h}:00${x.s?'(2人目)':''}</td><td><span class="nm">${esc(x.name)}</span>${x.kind==='rule'?' <b class="tag f">固</b>':''}</td><td>${x.type==='new'?'<b class="maru">新</b>':x.type==='visit'?'<b class="tag v">往</b>':'<b class="kaku">既</b>'}${TYPE_LABEL[x.type]||''}</td><td>${esc(x.memo||'')}</td><td class="c"><input type="checkbox" data-ns="${key(dDate,x.h,x.s)}" ${x.ns?'checked':''}></td></tr>`).join('')
+    ? `<table class="dtable"><tr><th>時間</th><th>氏名</th><th>区分</th><th>メモ</th><th>受診なし</th>${ro?'<th>報酬入力済</th>':''}</tr>`
+      + list.map(x=>`<tr class="${x.ns?'ns':ro&&DONE[key(dDate,x.h,x.s)]?'done':''}"><td>${x.h}:00${x.s?'(2人目)':''}</td><td><span class="nm">${esc(x.name)}</span>${x.kind==='rule'?' <b class="tag f">固</b>':''}</td><td>${x.type==='new'?'<b class="maru">新</b>':x.type==='visit'?'<b class="tag v">往</b>':'<b class="kaku">既</b>'}${TYPE_LABEL[x.type]||''}</td><td>${esc(x.memo||'')}</td><td class="c"><input type="checkbox" data-ns="${key(dDate,x.h,x.s)}" ${x.ns?'checked':''} ${ro?'disabled':''}></td>${ro?`<td class="c">${x.ns?'<span class="dn">—</span>':`<input type="checkbox" data-done="${key(dDate,x.h,x.s)}" ${DONE[key(dDate,x.h,x.s)]?'checked':''}>`}</td>`:''}</tr>`).join('')
       + '</table>'
     : '<div class="note">この日の予約はありません。</div>';
 }
 function openDay(ds){ dDate=ds; renderDay(); if(!dlgD.open) dlgD.showModal(); }
 document.getElementById('dList').addEventListener('change',e=>{
+  const dk=e.target.dataset.done;
+  if(dk){ if(e.target.checked) DONE[dk]=1; else delete DONE[dk]; saveDone(); renderDay(); return; }
   const k=e.target.dataset.ns; if(!k) return;
   if(e.target.checked) S.noshow[k]=true; else delete S.noshow[k];
   save(); renderDay(); render();
@@ -944,10 +973,58 @@ document.getElementById('dNext').onclick=()=>openDay(ymd(addDays(parse(dDate),1)
 document.getElementById('btnToday').onclick=()=>openDay(ymd(new Date()));
 document.getElementById('grid').addEventListener('click',e=>{ const th=e.target.closest('th[data-day]'); if(th) openDay(th.dataset.day); });
 
+// ---- iPad → PC へデータを送る ----
+function stamp(d){ return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+document.getElementById('btnSend').onclick=async()=>{
+  const now=new Date();
+  const body=JSON.stringify({app:'amatsumi_yoyaku', sentAt:stamp(now), data:S});
+  const name=`予約データ_${ymd(now).replace(/-/g,'')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.json`;
+  const touch=matchMedia('(hover:none),(pointer:coarse)').matches;
+  if(touch && navigator.canShare){
+    for(const type of ['application/json','text/plain']){
+      const f=new File([body], type==='text/plain'?name.replace(/\.json$/,'.txt'):name, {type});
+      if(!navigator.canShare({files:[f]})) continue;
+      try{ await navigator.share({files:[f], title:'予約データ'}); return; }
+      catch(e){ if(e.name==='AbortError') return; }
+    }
+  }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([body],{type:'application/json'})); a.download=name; a.click();
+  if(touch) alert('「ダウンロード」に保存しました。ファイルアプリから LINE・メール・USBメモリなどで PC に送ってください。');
+};
+// ---- PC で iPad のデータを読み込む ----
+function receive(f){
+  f.text().then(t=>{
+    const bad=()=>alert('予約データのファイルではありません。iPadの「PCへ送る」で作ったファイルを選んでください。');
+    let d; try{ d=JSON.parse(t); }catch(e){ bad(); return; }
+    const data=d && d.app==='amatsumi_yoyaku' ? d.data : d;
+    if(!data || typeof data.bookings!=='object'){ bad(); return; }
+    const m=roMeta();
+    if(m && d.sentAt && m.sentAt && d.sentAt < m.sentAt && !confirm(`このファイル(${d.sentAt})は、前に読み込んだもの(${m.sentAt})より古いデータです。それでも読み込みますか？`)) return;
+    if(!m && !confirm('このPCの予約表を、iPadから送られたデータで置き換えます。\n以後このPCは閲覧専用になります(予約の入力は iPad で)。よろしいですか？')) return;
+    S=merge(data); saveRaw();
+    try{ localStorage.setItem(MODE_KEY, JSON.stringify({sentAt:d.sentAt||'', loadedAt:stamp(new Date())})); }catch(e){}
+    document.querySelectorAll('dialog[open]').forEach(x=>x.close());
+    render(); openDay(ymd(new Date()));
+  });
+}
+document.getElementById('btnRecv').onclick=()=>document.getElementById('rFile').click();
+document.getElementById('rFile').onchange=e=>{ const f=e.target.files[0]; if(f) receive(f); e.target.value=''; };
+let dragN=0;
+const hasFiles=e=>e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+document.addEventListener('dragenter',e=>{ if(hasFiles(e)){ dragN++; document.body.classList.add('dragging'); } });
+document.addEventListener('dragleave',()=>{ if(--dragN<=0){ dragN=0; document.body.classList.remove('dragging'); } });
+document.addEventListener('dragover',e=>{ if(hasFiles(e)) e.preventDefault(); });
+document.addEventListener('drop',e=>{ dragN=0; document.body.classList.remove('dragging'); const f=e.dataTransfer && e.dataTransfer.files[0]; if(!f) return; e.preventDefault(); receive(f); });
+document.getElementById('roOff').onclick=()=>{
+  if(!confirm('閲覧専用をやめて、このPCでも予約を入力できるようにします。\n※ 次に iPad のデータを読み込むと、このPCで入力した分は消えます。よろしいですか？')) return;
+  try{ localStorage.removeItem(MODE_KEY); }catch(e){}
+  render();
+};
+
 render();
 const dlgG=document.getElementById('dlgG');
 document.getElementById('btnGuide').onclick=()=>dlgG.showModal();
-document.getElementById('btnReset').onclick=()=>{ if(confirm('入力した内容を消して、見本データに戻します。よろしいですか？')){ S=demoData(); save(); setDay(new Date()); } };
+document.getElementById('btnReset').onclick=()=>{ if(confirm('入力した内容を消して、見本データに戻します。よろしいですか？')){ try{ localStorage.removeItem(MODE_KEY); localStorage.removeItem(DONE_KEY); }catch(e){} DONE={}; S=demoData(); save(); setDay(new Date()); } };
 if(typeof firstOpen!=='undefined') dlgG.showModal();
 </script>
 </body>
