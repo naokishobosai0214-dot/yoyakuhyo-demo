@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-10-09 21:05">
+<meta name="app-ver" content="2026-10-09 21:10">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -37,7 +37,7 @@ button.danger{color:#b42318;border-color:#f0b4ae}
 .dtable tr.done td{background:#eefaf0}
 .dtable .dn{font-size:11px;color:#9aa3af}
 .todo{color:#b42318;font-weight:bold}
-body.dragging::after{content:"ここに離すと iPad のデータを読み込みます";position:fixed;inset:12px;border:4px dashed #7c3aed;border-radius:14px;background:rgba(245,240,255,.85);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;color:#5b21b6;z-index:100;pointer-events:none}
+body.dragging::after{content:"ここに離すと iPad のデータを読み込みます";position:fixed;inset:12px;border:4px dashed #7c3aed;border-radius:14px;background:rgba(245,240,255,.35);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:bold;color:#5b21b6;z-index:100;pointer-events:none}
 td.off,th.day.off{background-color:var(--off)}
 th.day .hol{display:block;font-size:10px;color:var(--off-t);font-weight:bold}
 .offsw{background:var(--off)}
@@ -167,10 +167,10 @@ td:hover .add2{opacity:1}
 /* iPadの長押しで、Safariの文字選択・長押しメニュー(画面が白くなる)を出さない。メモ欄だけは選べるように残す */
 #grid,#grid *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #grid textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
-body.dragging,body.dragging *{-webkit-user-select:none!important;user-select:none!important}
+body.bkdrag,body.bkdrag *{-webkit-user-select:none!important;user-select:none!important}
 .bk.dragsrc{opacity:.35}
 .dragghost{position:fixed;z-index:1000;pointer-events:none;opacity:.92;box-shadow:0 6px 18px rgba(0,0,0,.3);transform:translate(-50%,-50%) scale(1.06)}
-body.dragging,body.dragging *{cursor:grabbing!important}
+body.bkdrag,body.bkdrag *{cursor:grabbing!important}
 .slot.dropok{background:#d7f5dd!important;outline:2px dashed #15803d;outline-offset:-2px}
 .slot.dropng{background:#fde2e2!important;outline:2px dashed #d42a2a;outline-offset:-2px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:1001;background:#1d2430;color:#fff;padding:10px 14px;border-radius:8px;font-size:14px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:calc(100vw - 32px)}
@@ -584,7 +584,7 @@ function lookup(date,h,s){
   const dow = parse(date).getDay();
   const r = S.rules.find(r=>r.dow===dow && r.hour===h && r.slot===s && r.from<=date && (!r.to || date<=r.to) && weeksBetween(r.from,date)%(r.every||1)===0);
   if(r){
-    if(S.skips[r.id+'|'+date]) return {kind:'skipped', rule:r};
+    if(S.skips[r.id+'|'+date]) return {kind:'skipped', rule:r, moved:S.skips[r.id+'|'+date]==='moved'};
     return {kind:'rule', rule:r, name:r.name, type:r.type, memo:r.memo, ns};
   }
   return null;
@@ -592,6 +592,7 @@ function lookup(date,h,s){
 
 function cellHtml(x){
   if(!x) return '';
+  if(x.kind==='skipped' && x.moved) return ''; // ドラッグで別の日時へ移した元の枠は空きとして見せる
   if(x.kind==='skipped') return `<div class="skipped">${esc(x.rule.name)}(休み)</div>`;
   const tags = (x.kind==='rule'?'<b class="tag f">固</b>':'') + ((x.type||'normal')==='normal'?'<b class="kaku">既</b>':'') + (x.type==='new'?'<b class="maru">新</b>':'') + (x.type==='visit'?'<b class="tag v">往</b>':'');
   return `<div class="bk ${x.type||'normal'} ${x.kind==='rule'?'fixed':''}">${tags}<span class="nm">${esc(x.name)}</span>${x.memo?`<span class="memo">${esc(x.memo)}</span>`:''}</div>`;
@@ -675,7 +676,7 @@ function startDrag(){
   try{ getSelection().removeAllRanges(); }catch(e){}
   const g=drag.bk.cloneNode(true); g.classList.add('dragghost'); g.style.width=drag.bk.offsetWidth+'px';
   document.body.appendChild(g); drag.ghost=g;
-  drag.bk.classList.add('dragsrc'); document.body.classList.add('dragging');
+  drag.bk.classList.add('dragsrc'); document.body.classList.add('bkdrag');
   if(navigator.vibrate) navigator.vibrate(30);
   moveDrag(drag.cx,drag.cy);
   const tick=()=>{ if(!drag||!drag.on) return; // 画面の上下の端では自動でスクロール
@@ -690,7 +691,7 @@ function endDrag(ok){
   const d=drag; drag=null;
   if(!d.on) return;
   dragEndAt=Date.now();
-  d.ghost.remove(); d.bk.classList.remove('dragsrc'); document.body.classList.remove('dragging'); markTarget(null);
+  d.ghost.remove(); d.bk.classList.remove('dragsrc'); document.body.classList.remove('bkdrag'); markTarget(null);
   drag=d; const t=ok && dropTarget(d.cx,d.cy); drag=null;
   if(!t || t.same) return;
   if(t.ng){ alert('移動先のマスは埋まっています(1人目・2人目とも予約あり)。'); return; }
@@ -744,7 +745,7 @@ function moveBooking(from,to,x){
 document.getElementById('mvCancel').onclick=()=>{ mvPending=null; dlgMv.close(); };
 document.getElementById('mvOnce').onclick=()=>{
   const {from,to,x}=mvPending, r=x.rule, snap=JSON.stringify(S), fk=key(from.date,from.h,from.s), tk=key(to.date,to.h,to.s);
-  S.skips[r.id+'|'+from.date]=true;
+  S.skips[r.id+'|'+from.date]='moved';
   S.bookings[tk]={name:r.name, type:r.type, memo:r.memo||''};
   moveFlag(S.noshow,fk,tk);
   mvPending=null; dlgMv.close();
@@ -788,7 +789,8 @@ document.getElementById('fNs').addEventListener('change',e=>{ document.getElemen
 function getType(){ return dlg.querySelector('input[name=type]:checked').value; }
 
 function openSlot(date,h,s){
-  const x = lookup(date,h,s);
+  let x = lookup(date,h,s);
+  if(x && x.moved) x = null; // 移した元の枠は空きとして新しい予約を入れられる
   cur = {date,h,s,x};
   const d = parse(date);
   document.getElementById('dlgTitle').textContent = `${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]}) ${h}:00${s?'(2人目)':''}`;
