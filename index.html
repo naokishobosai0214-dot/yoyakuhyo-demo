@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-10-08 22:38">
+<meta name="app-ver" content="2026-10-09 21:00">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -80,11 +80,8 @@ th.day .dl{font-size:10px;color:var(--accent);font-weight:normal}
 .dtable input[type=checkbox]{width:18px;height:18px}
 .dsum{font-size:13px;display:flex;gap:12px;flex-wrap:wrap}
 td.today, th.today{background:var(--today)}
-td.travel{background-color:#fff7d6;background-image:repeating-linear-gradient(-45deg,rgba(224,168,0,.45) 0 2px,transparent 2px 6px),repeating-linear-gradient(45deg,rgba(224,168,0,.45) 0 2px,transparent 2px 6px)}
-.travelinfo{font-size:12px;background:#fff7d6;border:1px solid #e0a800;border-radius:6px;padding:6px 8px;color:#6b4e00;font-weight:bold}
 .hsw{display:inline-block;width:22px;height:14px;border:1px solid var(--line);vertical-align:-2px}
 .closedsw{background-color:#eceff3;background-image:repeating-linear-gradient(45deg,rgba(90,100,115,.22) 0 2px,transparent 2px 7px)}
-.travelsw{background-color:#fff7d6;background-image:repeating-linear-gradient(-45deg,rgba(224,168,0,.45) 0 2px,transparent 2px 6px),repeating-linear-gradient(45deg,rgba(224,168,0,.45) 0 2px,transparent 2px 6px)}
 td.closed,th.time.closed{background-color:#eceff3;background-image:repeating-linear-gradient(45deg,rgba(90,100,115,.22) 0 2px,transparent 2px 7px)}
 th.time.closed{color:#9aa3af}
 .slots{display:grid;grid-template-columns:1fr;min-height:46px}
@@ -166,10 +163,16 @@ td:hover .add2{opacity:1}
 .nsmark{display:inline-block;font-size:10px;padding:0 3px;border-radius:3px;margin-right:2px;color:#fff;background:#6b7280;vertical-align:1px}
 .hist .hr.ns{color:#9aa3af}
 .hist .hr.ns .nsl{color:#b42318;font-weight:bold}
-.warn{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:50%;background:#d42a2a;color:#fff;font-size:12px;font-weight:bold;margin-right:2px;vertical-align:-3px;animation:blink 1.2s step-end infinite}
-@keyframes blink{50%{opacity:.35}}
-.bk.conflict{outline:2px solid #d42a2a;outline-offset:-1px}
-@media print{.warn{animation:none}}
+.bk{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;cursor:grab}
+.bk.dragsrc{opacity:.35}
+.dragghost{position:fixed;z-index:1000;pointer-events:none;opacity:.92;box-shadow:0 6px 18px rgba(0,0,0,.3);transform:translate(-50%,-50%) scale(1.06)}
+body.dragging,body.dragging *{cursor:grabbing!important}
+.slot.dropok{background:#d7f5dd!important;outline:2px dashed #15803d;outline-offset:-2px}
+.slot.dropng{background:#fde2e2!important;outline:2px dashed #d42a2a;outline-offset:-2px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:1001;background:#1d2430;color:#fff;padding:10px 14px;border-radius:8px;font-size:14px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:calc(100vw - 32px)}
+.toast[hidden]{display:none}
+.toast button{background:#fff;color:#1d2430;border-radius:6px;font-weight:bold}
+@media print{.toast{display:none}}
 .nsbadge{background:#d42a2a;color:#fff;border-radius:6px;padding:3px 10px;font-size:14px;letter-spacing:.05em}
 .nsbox{background:#fff4f2;border:1px solid #f3c7c0;border-radius:6px;padding:6px 8px}
 .bk .memo{color:var(--sub);font-size:11px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -256,8 +259,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span><b class="tag f">固</b>固定客(毎週自動で表示)</span>
   <span><i class="hsw closedsw"></i>営業時間外</span>
   <span><i class="hsw offsw"></i>休診日(日曜・祝日)</span>
-  <span><i class="hsw travelsw"></i>往診の前後1時間(受診不可)</span>
-  <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。</span>
+  <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。予約はマウスで引っぱって別のマスへ移動できます。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。予約は長押ししてから指を動かすと、別のマスへ移動できます。</span>
 </div>
 <div id="upBar" class="upbar" hidden>予約表の新しい版があります。<span class="spacer"></span><button type="button" class="primary" id="upGo">今すぐ更新する</button></div>
 <div id="roBar" class="robar" hidden><b>閲覧専用(iPadから受け取ったデータ)</b><span id="roInfo"></span><span class="spacer"></span><span class="note">予約の入力・変更は iPad でしてください。報酬システムの「入力済み」チェックだけはここで付けられます。</span><button type="button" id="roOff">このPCでも入力する</button></div>
@@ -273,7 +275,8 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>区分の色</b>：<b class="kaku">既</b>既存=青、<b class="maru">新</b>新規=赤、<b class="tag v">往</b>往診=黄。</li>
       <li><b>固定客</b>：予約画面で「固定客にする」→「毎週」か「◯週間に1回」を選ぶと、先の週にも自動で入ります(<b class="tag f">固</b>の印)。「この日だけ休み」もできます。</li>
       <li><b>2人目</b>：1時間1人が基本。予約の入ったマスにマウスを乗せると「＋2人目」が出ます(iPad・スマホでは最初から出ています)。</li>
-      <li><b>網掛け</b>：灰色の斜線＝営業時間外(8〜20時の外)、黄色の格子＝往診の前後1時間。黄色の枠に予約が重なると <b class="warn" style="animation:none">！</b> で知らせます(今週の木曜14時を見てください)。</li>
+      <li><b>網掛け</b>：灰色の斜線＝営業時間外(8〜20時の外)、薄い赤＝休診日(日曜・祝日)。</li>
+      <li><b>予約の移動</b>：予約をドラッグして別のマスに置くと移動します(iPadは予約を長押し→そのまま指を動かす)。固定客は「この日だけ」か「この日以降ずっと」を選べます。移動後8秒間は「元に戻す」が押せます。</li>
       <li><b>その日の受診者一覧</b>：表の日付をクリック、または「今日の受診者」。受診しなかった人だけ「受診なし」にチェックします。</li>
       <li><b>受診履歴</b>：予約をクリックすると、その人の受診履歴と月ごとの回数が下に出ます。</li>
       <li><b>月別受診回数</b>・<b>患者別 履歴・予定</b>：上のボタンから、全員の回数・次回予定・「予定なし」の人がひと目でわかります。</li>
@@ -293,7 +296,6 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <form method="dialog" id="bkForm">
     <div class="dh" style="display:flex;align-items:center;gap:8px"><span id="dlgTitle"></span><span class="spacer"></span><b id="dlgNs" class="nsbadge" hidden>✕ 受診なし</b></div>
     <div class="db">
-      <div id="travelInfo" class="travelinfo" hidden>この時間は往診の前後1時間のため、受診できない枠です。</div>
       <div id="fixInfo" class="fixinfo" hidden></div>
       <label class="row">患者氏名(漢字・ふりがなのどちらでも検索できます)
         <input type="text" id="fName" autocomplete="off" placeholder="例：山田 太郎 / やまだ">
@@ -326,6 +328,20 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
     </div>
   </form>
 </dialog>
+
+<!-- 固定客をドラッグしたとき -->
+<dialog id="dlgMv">
+  <div class="dh">固定客の移動</div>
+  <div class="db"><div id="mvText"></div></div>
+  <div class="df" style="flex-wrap:wrap">
+    <button type="button" id="mvCancel">やめる</button>
+    <span class="spacer"></span>
+    <button type="button" id="mvOnce">この日だけ移動</button>
+    <button type="button" class="primary" id="mvAll">この日以降ずっと移動</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" hidden><span id="toastMsg"></span><button type="button" id="toastUndo">元に戻す</button></div>
 
 <!-- 患者名簿 -->
 <dialog id="dlgP">
@@ -479,7 +495,7 @@ function demoData(){
   // 今週
   B(0,1,10,1,'小林 さくら','new','初診 紹介：山田さん');
   B(0,2,16,0,'鈴木 一郎','normal');
-  B(0,4,14,0,'田中 次郎','normal','往診前と重なり要調整');
+  B(0,4,14,0,'田中 次郎','normal','腰痛');
   B(0,3,18,0,'加藤 由美','new');
   B(0,5,9,0,'渡辺 大輔','normal');
   B(0,6,10,0,'伊藤 美咲','visit','施設訪問');
@@ -530,11 +546,6 @@ function holidayName(ds){ return holidays(+ds.slice(0,4))[ds]||''; }
 // 休診日(曜日の設定 or 祝日)
 function isOff(ds){ const st=S.settings; return (st.offDows||[]).includes(parse(ds).getDay()) || (st.holidayOff!==false && !!holidayName(ds)); }
 function isOpen(t){ return t>=S.settings.open && t<S.settings.close; }
-// 往診の前後1時間(その時間の前後どちらかの枠に往診が入っている。受診なしの往診は除く)
-function isTravel(ds,t){
-  for(const u of [t-1,t+1]) for(let s=0;s<2;s++){ const x=lookup(ds,u,s); if(x && x.kind!=='skipped' && x.type==='visit' && !x.ns) return true; }
-  return false;
-}
 function load(){
   try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s) return merge(s); }catch(e){}
   return blank();
@@ -575,13 +586,11 @@ function lookup(date,h,s){
   return null;
 }
 
-function cellHtml(x,tv){
+function cellHtml(x){
   if(!x) return '';
   if(x.kind==='skipped') return `<div class="skipped">${esc(x.rule.name)}(休み)</div>`;
   const tags = (x.kind==='rule'?'<b class="tag f">固</b>':'') + ((x.type||'normal')==='normal'?'<b class="kaku">既</b>':'') + (x.type==='new'?'<b class="maru">新</b>':'') + (x.type==='visit'?'<b class="tag v">往</b>':'');
-  // 往診の前後1時間(黄色の網掛け)に予約が重なったら「！」で注意(受診なしは除く)
-  const cf = tv && !x.ns;
-  return `<div class="bk ${x.type||'normal'} ${x.kind==='rule'?'fixed':''} ${cf?'conflict':''}" ${cf?'title="往診の前後1時間と重なっています"':''}>${cf?'<b class="warn">！</b>':''}${tags}<span class="nm">${esc(x.name)}</span>${x.memo?`<span class="memo">${esc(x.memo)}</span>`:''}</div>`;
+  return `<div class="bk ${x.type||'normal'} ${x.kind==='rule'?'fixed':''}">${tags}<span class="nm">${esc(x.name)}</span>${x.memo?`<span class="memo">${esc(x.memo)}</span>`:''}</div>`;
 }
 
 function render(){
@@ -611,12 +620,11 @@ function render(){
       const ds=ymd(d);
       const x0=lookup(ds,t,0), x1=lookup(ds,t,1);
       const two = !!x1; // 2人目は入っているときだけ表示
-      const tv = isTravel(ds,t);
-      h += `<td class="${tv?'travel':isOff(ds)?'off':isOpen(t)&&ds===today?'today':cl}" ${tv?'title="往診の前後1時間(受診不可)"':''}><div class="slots ${two?'two':''}">`;
-      h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="0">${cellHtml(x0,tv)}${two?'<span class="lbl">1</span>':''}`;
+      h += `<td class="${isOff(ds)?'off':isOpen(t)&&ds===today?'today':cl}"><div class="slots ${two?'two':''}">`;
+      h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="0">${cellHtml(x0)}${two?'<span class="lbl">1</span>':''}`;
       if(!two && x0 && x0.kind!=='skipped') h += `<button type="button" class="add2" data-d="${ds}" data-h="${t}" title="この時間に2人目を入れる">＋2人目</button>`;
       h += '</div>';
-      if(two) h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="1">${cellHtml(x1,tv)}<span class="lbl">2</span></div>`;
+      if(two) h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="1">${cellHtml(x1)}<span class="lbl">2</span></div>`;
       h += '</div></td>';
     });
     h += '</tr>';
@@ -630,6 +638,7 @@ function render(){
 }
 
 document.getElementById('grid').addEventListener('click',e=>{
+  if(Date.now()-dragEndAt<500) return; // ドラッグを離した直後のクリックは無視
   const a2 = e.target.closest('.add2');
   if(a2){ openSlot(a2.dataset.d, +a2.dataset.h, 1); return; }
   const el = e.target.closest('.slot'); if(!el) return;
@@ -641,6 +650,121 @@ document.getElementById('grid').addEventListener('input',e=>{
   if(e.target.value) S.dayMemos[ds]=e.target.value; else delete S.dayMemos[ds];
   save();
 });
+
+// ---- ドラッグで予約を移動(タッチは長押ししてから動かす。マウスはそのまま引っぱる) ----
+let drag=null, dragEndAt=0;
+function dropTarget(cx,cy){
+  const el=document.elementFromPoint(cx,cy), sl=el&&el.closest('#grid .slot'); if(!sl) return null;
+  const f=drag.from, t={date:sl.dataset.d, h:+sl.dataset.h, s:+sl.dataset.s, sl};
+  if(t.date===f.date && t.h===f.h && t.s===f.s) return {...t, same:true};
+  const busy=s=>{ if(t.date===f.date && t.h===f.h && s===f.s) return false; const y=lookup(t.date,t.h,s); return !!(y && y.kind!=='skipped'); };
+  if(busy(t.s)){ if(t.s===0 && !busy(1)) t.s=1; else t.ng=true; } // 1人目が埋まっていれば2人目へ
+  return t;
+}
+function markTarget(t){
+  document.querySelectorAll('#grid .dropok,#grid .dropng').forEach(e=>e.classList.remove('dropok','dropng'));
+  if(t && !t.same) t.sl.classList.add(t.ng?'dropng':'dropok');
+}
+function startDrag(){
+  if(!drag) return;
+  drag.on=true;
+  const g=drag.bk.cloneNode(true); g.classList.add('dragghost'); g.style.width=drag.bk.offsetWidth+'px';
+  document.body.appendChild(g); drag.ghost=g;
+  drag.bk.classList.add('dragsrc'); document.body.classList.add('dragging');
+  if(navigator.vibrate) navigator.vibrate(30);
+  moveDrag(drag.cx,drag.cy);
+  const tick=()=>{ if(!drag||!drag.on) return; // 画面の上下の端では自動でスクロール
+    if(drag.cy<70) window.scrollBy(0,-14); else if(drag.cy>innerHeight-70) window.scrollBy(0,14);
+    markTarget(drag.t=dropTarget(drag.cx,drag.cy)); requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+function moveDrag(cx,cy){ drag.cx=cx; drag.cy=cy; if(drag.ghost){ drag.ghost.style.left=cx+'px'; drag.ghost.style.top=cy+'px'; } }
+function endDrag(ok){
+  if(!drag) return;
+  clearTimeout(drag.timer);
+  const d=drag; drag=null;
+  if(!d.on) return;
+  dragEndAt=Date.now();
+  d.ghost.remove(); d.bk.classList.remove('dragsrc'); document.body.classList.remove('dragging'); markTarget(null);
+  drag=d; const t=ok && dropTarget(d.cx,d.cy); drag=null;
+  if(!t || t.same) return;
+  if(t.ng){ alert('移動先のマスは埋まっています(1人目・2人目とも予約あり)。'); return; }
+  moveBooking(d.from,{date:t.date,h:t.h,s:t.s},d.x);
+}
+const gridEl=document.getElementById('grid');
+gridEl.addEventListener('pointerdown',e=>{
+  if(isRO() || e.button>0 || drag) return;
+  const a2=e.target.closest('.add2'); // 「＋2人目」は予約の上に重なっているので、そこからでもつかめるようにする
+  const bk=e.target.closest('.bk')||(a2&&a2.closest('.slot').querySelector('.bk')), sl=bk&&bk.closest('.slot'); if(!sl) return;
+  const from={date:sl.dataset.d, h:+sl.dataset.h, s:+sl.dataset.s}, x=lookup(from.date,from.h,from.s);
+  if(!x || x.kind==='skipped') return;
+  drag={from, x, bk, id:e.pointerId, sx:e.clientX, sy:e.clientY, cx:e.clientX, cy:e.clientY, on:false, touch:e.pointerType!=='mouse'};
+  if(drag.touch) drag.timer=setTimeout(startDrag,400);
+});
+document.addEventListener('pointermove',e=>{
+  if(!drag || e.pointerId!==drag.id) return;
+  if(!drag.on){
+    const dist=Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy);
+    if(drag.touch){ if(dist>10){ clearTimeout(drag.timer); drag=null; } return; } // 長押しの前に指が動いたら、ふつうのスクロール
+    if(dist<6) return;
+    drag.cx=e.clientX; drag.cy=e.clientY; startDrag();
+  }
+  moveDrag(e.clientX,e.clientY);
+});
+document.addEventListener('pointerup',e=>{ if(drag && e.pointerId===drag.id) endDrag(true); });
+document.addEventListener('pointercancel',e=>{ if(drag && e.pointerId===drag.id) endDrag(false); });
+// ドラッグ中は画面のスクロール・長押しメニューを止める
+document.addEventListener('touchmove',e=>{ if(drag && drag.on) e.preventDefault(); },{passive:false});
+document.addEventListener('contextmenu',e=>{ if(drag) e.preventDefault(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && drag) endDrag(false); });
+
+const dlgMv=document.getElementById('dlgMv');
+let mvPending=null, undoSnap=null, toastTimer=0;
+function slotText(p){ const d=parse(p.date); return `${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]}) ${p.h}:00${p.s?'(2人目)':''}`; }
+function moveFlag(o,fk,tk){ if(o[fk]){ o[tk]=o[fk]; delete o[fk]; } }
+function moveBooking(from,to,x){
+  if(x.kind==='booking'){
+    const snap=JSON.stringify(S), fk=key(from.date,from.h,from.s), tk=key(to.date,to.h,to.s);
+    S.bookings[tk]=S.bookings[fk]; delete S.bookings[fk];
+    moveFlag(S.noshow,fk,tk);
+    moved(snap, `${x.name}さんを ${slotText(to)} に移動しました`);
+    return;
+  }
+  mvPending={from,to,x};
+  document.getElementById('mvText').innerHTML = `<b>${esc(x.name)}</b>さん(固定客：${everyText(x.rule)} ${DOW[x.rule.dow]}曜 ${x.rule.hour}:00)を<br>${slotText(from)} → <b>${slotText(to)}</b><br>に移動します。`
+    + `<div class="note" style="margin-top:8px">「この日だけ」：この日は休みにして、移動先にこの日だけの予約を入れます。<br>「この日以降ずっと」：固定の曜日・時間を、移動先から先ずっと変えます。</div>`;
+  dlgMv.showModal();
+}
+document.getElementById('mvCancel').onclick=()=>{ mvPending=null; dlgMv.close(); };
+document.getElementById('mvOnce').onclick=()=>{
+  const {from,to,x}=mvPending, r=x.rule, snap=JSON.stringify(S), fk=key(from.date,from.h,from.s), tk=key(to.date,to.h,to.s);
+  S.skips[r.id+'|'+from.date]=true;
+  S.bookings[tk]={name:r.name, type:r.type, memo:r.memo||''};
+  moveFlag(S.noshow,fk,tk);
+  mvPending=null; dlgMv.close();
+  moved(snap, `${r.name}さんを ${slotText(to)} に移動しました(この日だけ)`);
+};
+document.getElementById('mvAll').onclick=()=>{
+  const {from,to,x}=mvPending, r=x.rule, snap=JSON.stringify(S), fk=key(from.date,from.h,from.s), tk=key(to.date,to.h,to.s);
+  const oldTo=r.to;
+  r.to=ymd(addDays(parse(from.date),-1));
+  S.rules.push({id:uid(), dow:parse(to.date).getDay(), hour:to.h, slot:to.s, from:to.date, to:oldTo||'', every:r.every||1, name:r.name, type:r.type, memo:r.memo||''});
+  moveFlag(S.noshow,fk,tk);
+  cleanRules();
+  mvPending=null; dlgMv.close();
+  moved(snap, `${r.name}さんの固定を ${DOW[parse(to.date).getDay()]}曜 ${to.h}:00 に変えました(${slotText(to).split(' ')[0]}から)`);
+};
+// 移動したら保存して、8秒だけ「元に戻す」を出す
+function moved(snap,msg){
+  undoSnap=snap; save(); render();
+  document.getElementById('toastMsg').textContent=msg;
+  const t=document.getElementById('toast'); t.hidden=false;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ t.hidden=true; undoSnap=null; },8000);
+}
+document.getElementById('toastUndo').onclick=()=>{
+  if(undoSnap){ S=JSON.parse(undoSnap); undoSnap=null; save(); render(); }
+  document.getElementById('toast').hidden=true;
+};
 
 // ---- 予約の入力 ----
 const dlg = document.getElementById('dlg');
@@ -673,7 +797,6 @@ function openSlot(date,h,s){
   fFixed.checked = !!(x && (x.kind==='rule'||x.kind==='skipped'));
   setEvery(x && x.rule ? (x.rule.every||1) : 1);
   everyBox.hidden = !fFixed.checked;
-  document.getElementById('travelInfo').hidden = !isTravel(date,h);
   info.hidden = !(x && (x.kind==='rule'||x.kind==='skipped'));
   if(!info.hidden) info.textContent = `固定客：${everyText(x.rule)} ${DOW[x.rule.dow]}曜 ${x.rule.hour}:00${x.rule.slot?'(2人目)':''}(${x.rule.from}から)。名前・区分・メモを変えると、これから先の分もすべて変わります。間隔を変えると、この日から新しい間隔で数え直します。` + (x.kind==='skipped'?' この日は「休み」になっています。':'');
   document.getElementById('bSkip').hidden = !(x && x.kind==='rule');
@@ -949,7 +1072,7 @@ document.getElementById('eGo').onclick=()=>{
     const memo=S.dayMemos[ds];
     body+=`<section${i===0?' class="today"':''}><h2 class="${d.getDay()===0?'sun':d.getDay()===6?'sat':''}">${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]})${i===0?' <span class="tb">今日</span>':''}<small>${list.length}人</small></h2>`;
     if(withMemo&&memo) body+=`<div class="dm">${esc(memo)}</div>`;
-    body+= list.length ? list.map(x=>`<div class="r ${x.type||'normal'}${isTravel(ds,x.h)?' cf':''}"><span class="tm">${x.h}:00${x.s?'<br><small>2人目</small>':''}</span><span class="nm">${isTravel(ds,x.h)?'<b class="w">！</b>':''}${mark(x)}${esc(x.name)}${withMemo&&x.memo?`<small>${esc(x.memo)}</small>`:''}</span></div>`).join('') : '<div class="no">予約なし</div>';
+    body+= list.length ? list.map(x=>`<div class="r ${x.type||'normal'}"><span class="tm">${x.h}:00${x.s?'<br><small>2人目</small>':''}</span><span class="nm">${mark(x)}${esc(x.name)}${withMemo&&x.memo?`<small>${esc(x.memo)}</small>`:''}</span></div>`).join('') : '<div class="no">予約なし</div>';
     body+='</section>';
   }
   const html=`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>予約表(閲覧用)${now}</title><style>
@@ -965,7 +1088,6 @@ h2 small{margin-left:auto;font-weight:normal;color:#5d6878}h2.sun{color:#c0262d}
 .dm{padding:6px 12px;font-size:13px;background:#fffbe6;border-top:1px solid #eee}
 .r{display:flex;gap:10px;padding:8px 12px;border-top:1px solid #e7ebf0;border-left:5px solid}
 .r.normal{border-left-color:#1f5fd1;background:#f2f7ff}.r.new{border-left-color:#d42a2a;background:#fff3f3}.r.visit{border-left-color:#e0a800;background:#fffbe0}
-.r.cf{outline:2px solid #d42a2a;outline-offset:-2px}
 .tm{width:48px;flex:none;font-weight:bold}.tm small{font-weight:normal;color:#5d6878;font-size:11px}
 .nm{font-weight:bold}.nm small{display:block;font-weight:normal;color:#5d6878;font-size:12px}
 .no{padding:8px 12px;color:#9aa3af;font-size:13px;border-top:1px solid #e7ebf0}
@@ -976,7 +1098,7 @@ h2 small{margin-left:auto;font-weight:normal;color:#5d6878}h2.sun{color:#c0262d}
 .w{width:16px;height:16px;border-radius:50%;background:#d42a2a;color:#fff;font-weight:bold;font-size:11px}
 footer{font-size:11px;color:#9aa3af;text-align:center;padding:10px 10px 24px}
 </style></head><body><header><h1>予約表(閲覧用)</h1><p>${now} 時点・${n/7}週間分。変更があったときは最新のファイルを見てください。</p></header>
-<div class="lg"><span><b class="kk">既</b>既存</span><span><b class="mr">新</b>新規</span><span><b class="t v">往</b>往診</span><span><b class="t f">固</b>固定客</span><span><b class="w">！</b>往診の前後と重なり</span></div>
+<div class="lg"><span><b class="kk">既</b>既存</span><span><b class="mr">新</b>新規</span><span><b class="t v">往</b>往診</span><span><b class="t f">固</b>固定客</span></div>
 ${body}<footer>このファイルは閲覧専用です。予約の変更はパソコンの予約表で行ってください。</footer></body></html>`;
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
