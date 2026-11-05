@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-10-09 21:10">
+<meta name="app-ver" content="2026-11-05 22:13">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -421,7 +421,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
     <div class="dsum" id="dSum"></div>
     <div id="dList"></div>
     <div class="note">受診しなかった人だけ「受診なし」にチェックを入れてください。チェックはその場で保存されます。</div>
-    <div class="note" id="dDoneNote" hidden>「報酬入力済」は、診療報酬システムに入力し終えた人にチェックします。このPCだけに保存され、iPadのデータを読み込み直しても消えません。</div>
+    <div class="note" id="dDoneNote"></div>
   </div>
   <div class="df"><button type="button" onclick="dlgD.close()">閉じる</button></div>
 </dialog>
@@ -1160,11 +1160,14 @@ function renderDay(){
   const ns=list.filter(x=>x.ns).length;
   const cnt=t=>list.filter(x=>x.type===t&&!x.ns).length;
   document.getElementById('dSum').innerHTML = list.length ? `<b>予約 ${list.length}人</b><span>受診 ${list.length-ns}人</span><span style="color:#b42318">受診なし ${ns}人</span><span>(既存 ${cnt('normal')}・新規 ${cnt('new')}・往診 ${cnt('visit')})</span>` : '';
-  const ro=isRO(); document.getElementById('dDoneNote').hidden=!ro;
-  if(ro && list.length){ const left=list.filter(x=>!x.ns && !DONE[key(dDate,x.h,x.s)]).length; document.getElementById('dSum').innerHTML += left ? `<span class="todo">報酬システム未入力 ${left}人</span>` : `<span style="color:#15803d;font-weight:bold">報酬システム 全員入力済み</span>`; }
+  const ro=isRO();
+  document.getElementById('dDoneNote').textContent = ro
+    ? '「報酬入力済」は、診療報酬システムに入力し終えた人にチェックします。このPCだけに保存され、iPadのデータを読み込み直しても消えません。'
+    : '「報酬入力済」は、診療報酬システムに入力し終えた人にチェックします(この画面を見ながらPCに入力するとき用)。チェックはこの端末だけに保存されます。';
+  if(list.length && dDate<=ymd(new Date())){ const left=list.filter(x=>!x.ns && !DONE[key(dDate,x.h,x.s)]).length; document.getElementById('dSum').innerHTML += left ? `<span class="todo">報酬システム未入力 ${left}人</span>` : `<span style="color:#15803d;font-weight:bold">報酬システム 全員入力済み</span>`; }
   document.getElementById('dList').innerHTML = list.length
-    ? `<table class="dtable"><tr><th>時間</th><th>氏名</th><th>区分</th><th>メモ</th><th>受診なし</th>${ro?'<th>報酬入力済</th>':''}</tr>`
-      + list.map(x=>`<tr class="${x.ns?'ns':ro&&DONE[key(dDate,x.h,x.s)]?'done':''}"><td>${x.h}:00${x.s?'(2人目)':''}</td><td><span class="nm">${esc(x.name)}</span>${x.kind==='rule'?' <b class="tag f">固</b>':''}</td><td>${x.type==='new'?'<b class="maru">新</b>':x.type==='visit'?'<b class="tag v">往</b>':'<b class="kaku">既</b>'}${TYPE_LABEL[x.type]||''}</td><td>${esc(x.memo||'')}</td><td class="c"><input type="checkbox" data-ns="${key(dDate,x.h,x.s)}" ${x.ns?'checked':''} ${ro?'disabled':''}></td>${ro?`<td class="c">${x.ns?'<span class="dn">—</span>':`<input type="checkbox" data-done="${key(dDate,x.h,x.s)}" ${DONE[key(dDate,x.h,x.s)]?'checked':''}>`}</td>`:''}</tr>`).join('')
+    ? `<table class="dtable"><tr><th>時間</th><th>氏名</th><th>区分</th><th>メモ</th><th>受診なし</th><th>報酬入力済</th></tr>`
+      + list.map(x=>`<tr class="${x.ns?'ns':DONE[key(dDate,x.h,x.s)]?'done':''}"><td>${x.h}:00${x.s?'(2人目)':''}</td><td><span class="nm">${esc(x.name)}</span>${x.kind==='rule'?' <b class="tag f">固</b>':''}</td><td>${x.type==='new'?'<b class="maru">新</b>':x.type==='visit'?'<b class="tag v">往</b>':'<b class="kaku">既</b>'}${TYPE_LABEL[x.type]||''}</td><td>${esc(x.memo||'')}</td><td class="c"><input type="checkbox" data-ns="${key(dDate,x.h,x.s)}" ${x.ns?'checked':''} ${ro?'disabled':''}></td><td class="c">${x.ns?'<span class="dn">—</span>':`<input type="checkbox" data-done="${key(dDate,x.h,x.s)}" ${DONE[key(dDate,x.h,x.s)]?'checked':''}>`}</td></tr>`).join('')
       + '</table>'
     : '<div class="note">この日の予約はありません。</div>';
 }
