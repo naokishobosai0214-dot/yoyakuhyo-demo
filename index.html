@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-05 22:13">
+<meta name="app-ver" content="2026-11-08 09:41">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -175,12 +175,21 @@ body.bkdrag,body.bkdrag *{cursor:grabbing!important}
 .slot.dropng{background:#fde2e2!important;outline:2px dashed #d42a2a;outline-offset:-2px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:1001;background:#1d2430;color:#fff;padding:10px 14px;border-radius:8px;font-size:14px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 14px rgba(0,0,0,.3);max-width:calc(100vw - 32px)}
 .toast[hidden]{display:none}
+/* 全画面(メニューを隠す) */
+body.fs header,body.fs .legend{display:none}
+body.fs .wrap{padding:0 0 8px}
+.fsbar{position:fixed;bottom:12px;right:12px;z-index:20;display:flex;gap:4px;background:rgba(255,255,255,.92);border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.fsbar button{padding:6px 10px;font-size:14px}
+.fsbar #fsRange{align-self:center;font-weight:bold;font-size:13px;padding:0 4px;white-space:nowrap}
+body:not(.fs) .fsbar .fsonly{display:none}
+@media print{.fsbar{display:none}}
 .toast button{background:#fff;color:#1d2430;border-radius:6px;font-weight:bold}
 @media print{.toast{display:none}}
 .nsbadge{background:#d42a2a;color:#fff;border-radius:6px;padding:3px 10px;font-size:14px;letter-spacing:.05em}
 .nsbox{background:#fff4f2;border:1px solid #f3c7c0;border-radius:6px;padding:6px 8px}
 .bk .memo{color:var(--sub);font-size:11px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tag{display:inline-block;font-size:10px;padding:0 3px;border-radius:3px;margin-right:2px;color:#fff;vertical-align:1px}
+.kouki{font-weight:bold;color:#b45309;margin-right:3px;white-space:nowrap}
 .kaku{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:1.5px solid var(--normal-b);border-radius:2px;color:var(--normal-b);font-size:10px;line-height:1;margin-right:2px;vertical-align:-3px;background:#fff}
 .maru{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:1.5px solid var(--new-b);border-radius:50%;color:var(--new-b);font-size:10px;line-height:1;margin-right:2px;vertical-align:-3px;background:#fff}
 .tag.f{background:var(--fixed-b)} .tag.n{background:var(--new-b)} .tag.v{background:var(--visit-b);color:#3b2f00}
@@ -263,7 +272,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span><b class="tag f">固</b>固定客(毎週自動で表示)</span>
   <span><i class="hsw closedsw"></i>営業時間外</span>
   <span><i class="hsw offsw"></i>休診日(日曜・祝日)</span>
-  <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。予約はマウスで引っぱって別のマスへ移動できます。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。予約は長押ししてから指を動かすと、別のマスへ移動できます。</span>
+  <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。予約はマウスで引っぱって別のマスへ移動できます。押したまま動かさずに離すと、そのコマだけ消せます。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。予約は長押ししてから指を動かすと、別のマスへ移動できます。長押しして動かさずに離すと、そのコマだけ消せます。</span>
 </div>
 <div id="upBar" class="upbar" hidden>予約表の新しい版があります。<span class="spacer"></span><button type="button" class="primary" id="upGo">今すぐ更新する</button></div>
 <div id="roBar" class="robar" hidden><b>閲覧専用(iPadから受け取ったデータ)</b><span id="roInfo"></span><span class="spacer"></span><span class="note">予約の入力・変更は iPad でしてください。報酬システムの「入力済み」チェックだけはここで付けられます。</span><button type="button" id="roOff">このPCでも入力する</button></div>
@@ -289,6 +298,10 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>スマホ</b>では1日ずつ表示します(「◀前の日／次の日▶」で移動、「週で見る」で1週間表示に切替)。上のボタンの列は横にスライドできます。</li>
       <li><b>iPad</b>では縦置きでも1週間が画面に収まります。Safariの共有ボタン →「ホーム画面に追加」で、アプリのように開けます。</li>
       <li><b>iPad → PC</b>：iPadで「PCへ送る」→ LINEの自分用トーク・メール・USBメモリなどでPCへ。PCでは「iPadのデータを読み込む」(またはファイルを画面にドラッグ)。PCは閲覧専用になり、受診者一覧に「報酬入力済」のチェック欄が出ます(紫の帯の「このPCでも入力する」で元に戻せます)。</li>
+      <li><b>全画面</b>：最初はメニューを隠して予約表を大きく表示します。右下の「☰ メニュー」でボタンの列が出て、「⛶ 表を大きく」でまた隠れます。週の移動は右下の ◀ ▶ でもできます。</li>
+      <li><b>キャンセル</b>：予約画面の「キャンセル(枠から消す)」で、その枠が空き、その日のMEMO欄に「10:00 ○○さん キャンセル」と書き込まれます(受診履歴にも残ります)。</li>
+      <li><b>長押しで消す</b>：予約を長押しして、動かさずに離すと「このコマを消す」が出ます(固定客はその日だけ)。消したあと8秒間は「元に戻す」が押せます。</li>
+      <li><b>後期高齢者</b>：予約画面の「後期高齢者」にチェックすると、名前の前に「🔸後」と出ます。患者名簿に記録されるので、次回からは自動で付きます。</li>
     </ol>
     <div class="note">データはこのパソコンのこのブラウザの中だけに保存されます(インターネットには送られません)。<br>まだ入っていないもの：診療報酬システムとの連携、診療報酬システムとの齟齬チェック。</div>
   </div>
@@ -305,6 +318,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
         <input type="text" id="fName" autocomplete="off" placeholder="例：山田 太郎 / やまだ">
       </label>
       <div class="sug" id="sug"></div>
+      <label><input type="checkbox" id="fKouki"> 後期高齢者(予約表に「🔸後」と出ます。名簿に記録され、次回からも自動で付きます)</label>
       <div class="radios">
         <label><input type="radio" name="type" value="normal" checked>既存</label>
         <label><input type="radio" name="type" value="new">新規</label>
@@ -318,7 +332,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <label class="row">メモ
         <textarea id="fMemo" rows="3"></textarea>
       </label>
-      <label class="nsbox"><input type="checkbox" id="fNs"> この日は受診しなかった(キャンセル・来院なし)</label>
+      <label class="nsbox"><input type="checkbox" id="fNs"> この日は受診しなかった(連絡なしで来なかった等。キャンセルは下の「キャンセル」ボタンで枠を空けます)</label>
       <div id="linkBox" class="note"></div>
       <div id="hist"></div>
     </div>
@@ -326,6 +340,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <button type="button" class="danger" id="bDelete">削除</button>
       <button type="button" id="bSkip" hidden>この日だけ休み</button>
       <button type="button" id="bUnskip" hidden>休みを取り消す</button>
+      <button type="button" class="danger" id="bCxl" hidden>キャンセル(枠から消す)</button>
       <span class="spacer"></span>
       <button type="button" id="bCancel">閉じる</button>
       <button type="button" class="primary" id="bSave">保存</button>
@@ -345,6 +360,9 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   </div>
 </dialog>
 
+<div class="fsbar" id="fsBar"><button type="button" class="fsonly" id="fsPrev" title="前へ">◀</button><span class="fsonly" id="fsRange"></span><button type="button" class="fsonly" id="fsNext" title="次へ">▶</button><button type="button" id="fsBtn"></button></div>
+<dialog id="dlgDel"><div class="dh" id="delTitle"></div><div class="db"><p id="delText" style="margin:4px 0 0"></p></div>
+<div class="df"><button type="button" id="delNo">やめる</button><span class="spacer"></span><button type="button" id="delCxl">キャンセル(メモに残す)</button><button type="button" class="danger" id="delYes">このコマを消す</button></div></dialog>
 <div id="toast" class="toast" hidden><span id="toastMsg"></span><button type="button" id="toastUndo">元に戻す</button></div>
 
 <!-- 患者名簿 -->
@@ -486,9 +504,9 @@ function demoData(){
   const day=(w,dow)=>ymd(addDays(ws,w*7+dow)); // w=何週後, dow=0(日)〜6(土)
   D.patients=[
     {name:'山田 太郎',kana:'やまだ たろう'},{name:'佐藤 花子',kana:'さとう はなこ'},{name:'高橋 健一',kana:'たかはし けんいち'},
-    {name:'中村 正',kana:'なかむら ただし'},{name:'小林 さくら',kana:'こばやし さくら'},{name:'鈴木 一郎',kana:'すずき いちろう'},
+    {name:'中村 正',kana:'なかむら ただし',kouki:true},{name:'小林 さくら',kana:'こばやし さくら'},{name:'鈴木 一郎',kana:'すずき いちろう'},
     {name:'田中 次郎',kana:'たなか じろう'},{name:'加藤 由美',kana:'かとう ゆみ'},{name:'渡辺 大輔',kana:'わたなべ だいすけ'},
-    {name:'伊藤 美咲',kana:'いとう みさき'},{name:'松本 和子',kana:'まつもと かずこ'}];
+    {name:'伊藤 美咲',kana:'いとう みさき'},{name:'松本 和子',kana:'まつもと かずこ',kouki:true}];
   const R=(name,type,dow,hour,every,fromW,memo='')=>D.rules.push({id:uid(),name,type,memo,dow,hour,slot:0,every,from:day(fromW,dow),to:''});
   R('山田 太郎','normal',1,10,1,-6,'腰痛');
   R('佐藤 花子','normal',3,14,1,-6);
@@ -527,7 +545,7 @@ function setDay(d){ curDay=new Date(d); weekStart=sunday(curDay); render(); }
 mq.addEventListener('change',()=>render());
 let cur = null; // 編集中のマス
 
-function blank(){ return {bookings:{}, rules:[], skips:{}, dayMemos:{}, noshow:{}, patients:[], settings:{start:6,end:23,open:8,close:20,link:'',offDows:[0],holidayOff:true}}; }
+function blank(){ return {bookings:{}, rules:[], skips:{}, dayMemos:{}, noshow:{}, cancels:[], patients:[], settings:{start:6,end:23,open:8,close:20,link:'',offDows:[0],holidayOff:true}}; }
 function merge(d){ const b=blank(); return Object.assign(b, d, {settings:Object.assign(b.settings, d.settings||{})}); }
 // ---- 日本の祝日(2020年以降の法律に合わせて計算。振替休日・国民の休日も) ----
 const HOL_CACHE={};
@@ -584,7 +602,7 @@ function lookup(date,h,s){
   const dow = parse(date).getDay();
   const r = S.rules.find(r=>r.dow===dow && r.hour===h && r.slot===s && r.from<=date && (!r.to || date<=r.to) && weeksBetween(r.from,date)%(r.every||1)===0);
   if(r){
-    if(S.skips[r.id+'|'+date]) return {kind:'skipped', rule:r, moved:S.skips[r.id+'|'+date]==='moved'};
+    if(S.skips[r.id+'|'+date]) return {kind:'skipped', rule:r, moved:S.skips[r.id+'|'+date]!==true};
     return {kind:'rule', rule:r, name:r.name, type:r.type, memo:r.memo, ns};
   }
   return null;
@@ -595,7 +613,7 @@ function cellHtml(x){
   if(x.kind==='skipped' && x.moved) return ''; // ドラッグで別の日時へ移した元の枠は空きとして見せる
   if(x.kind==='skipped') return `<div class="skipped">${esc(x.rule.name)}(休み)</div>`;
   const tags = (x.kind==='rule'?'<b class="tag f">固</b>':'') + ((x.type||'normal')==='normal'?'<b class="kaku">既</b>':'') + (x.type==='new'?'<b class="maru">新</b>':'') + (x.type==='visit'?'<b class="tag v">往</b>':'');
-  return `<div class="bk ${x.type||'normal'} ${x.kind==='rule'?'fixed':''}">${tags}<span class="nm">${esc(x.name)}</span>${x.memo?`<span class="memo">${esc(x.memo)}</span>`:''}</div>`;
+  return `<div class="bk ${x.type||'normal'} ${x.kind==='rule'?'fixed':''}">${kTag(x.name)}${tags}<span class="nm">${esc(x.name)}</span>${x.memo?`<span class="memo">${esc(x.memo)}</span>`:''}</div>`;
 }
 
 function render(){
@@ -609,6 +627,7 @@ function render(){
   const a=days[0], b=days[6];
   document.getElementById('range').textContent = dm ? `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日(${DOW[a.getDay()]})` : `${a.getFullYear()}年${a.getMonth()+1}月${a.getDate()}日(日) 〜 ${b.getMonth()+1}月${b.getDate()}日(土)`;
   document.getElementById('jump').value = dm ? ymd(curDay) : ymd(a);
+  syncFs();
   document.getElementById('grid').className = dm ? 'day' : 'week';
   let h = '<thead><tr><th class="time"></th>';
   days.forEach(d=>{
@@ -693,6 +712,7 @@ function endDrag(ok){
   dragEndAt=Date.now();
   d.ghost.remove(); d.bk.classList.remove('dragsrc'); document.body.classList.remove('bkdrag'); markTarget(null);
   drag=d; const t=ok && dropTarget(d.cx,d.cy); drag=null;
+  if(t && t.same && d.held){ askDel(d.from,d.x); return; } // 長押しして動かさずに離した
   if(!t || t.same) return;
   if(t.ng){ alert('移動先のマスは埋まっています(1人目・2人目とも予約あり)。'); return; }
   moveBooking(d.from,{date:t.date,h:t.h,s:t.s},d.x);
@@ -705,7 +725,7 @@ gridEl.addEventListener('pointerdown',e=>{
   const from={date:sl.dataset.d, h:+sl.dataset.h, s:+sl.dataset.s}, x=lookup(from.date,from.h,from.s);
   if(!x || x.kind==='skipped') return;
   drag={from, x, bk, id:e.pointerId, sx:e.clientX, sy:e.clientY, cx:e.clientX, cy:e.clientY, on:false, touch:e.pointerType!=='mouse'};
-  if(drag.touch) drag.timer=setTimeout(startDrag,400);
+  drag.timer=setTimeout(()=>{ if(drag) drag.held=true; startDrag(); }, drag.touch?400:600); // 長押し(動かさずに離すと「このコマを消す」)
 });
 document.addEventListener('pointermove',e=>{
   if(!drag || e.pointerId!==drag.id) return;
@@ -713,6 +733,7 @@ document.addEventListener('pointermove',e=>{
     const dist=Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy);
     if(drag.touch){ if(dist>10){ clearTimeout(drag.timer); drag=null; } return; } // 長押しの前に指が動いたら、ふつうのスクロール
     if(dist<6) return;
+    clearTimeout(drag.timer);
     drag.cx=e.clientX; drag.cy=e.clientY; startDrag();
   }
   moveDrag(e.clientX,e.clientY);
@@ -773,6 +794,24 @@ document.getElementById('toastUndo').onclick=()=>{
   document.getElementById('toast').hidden=true;
 };
 
+// ---- 全画面(メニューを隠す)。状態はこの端末に覚える ----
+const FS_KEY=KEY+'_fs';
+function setFs(on,fromBtn){
+  document.body.classList.toggle('fs',on);
+  document.getElementById('fsBtn').textContent = on ? '☰ メニュー' : '⛶ 表を大きく';
+  try{ localStorage.setItem(FS_KEY,on?'1':'0'); }catch(e){}
+  if(fromBtn){ try{ const de=document.documentElement;
+    if(on && !document.fullscreenElement && de.requestFullscreen) de.requestFullscreen().catch(()=>{});
+    if(!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+  }catch(e){} }
+  syncFs();
+}
+function syncFs(){ const r=document.getElementById('range'); document.getElementById('fsRange').textContent = r ? r.textContent.replace(/^\d+年/,'') : ''; }
+document.getElementById('fsBtn').onclick=()=>setFs(!document.body.classList.contains('fs'),true);
+document.getElementById('fsPrev').onclick=()=>{ document.getElementById('prev').click(); syncFs(); };
+document.getElementById('fsNext').onclick=()=>{ document.getElementById('next').click(); syncFs(); };
+{ let v=null; try{ v=localStorage.getItem(FS_KEY); }catch(e){} setFs(v!=='0'); } // 最初は表を大きく(メニューは隠す)
+
 // ---- 予約の入力 ----
 const dlg = document.getElementById('dlg');
 const fName = document.getElementById('fName'), fMemo=document.getElementById('fMemo'), fFixed=document.getElementById('fFixed');
@@ -799,6 +838,7 @@ function openSlot(date,h,s){
   fName.value = src ? src.name : '';
   fMemo.value = src ? (src.memo||'') : '';
   setType(src ? src.type : 'normal');
+  document.getElementById('fKouki').checked = isKouki(fName.value.trim());
   document.getElementById('fNs').checked = !!(x && x.ns);
   document.getElementById('dlgNs').hidden = !(x && x.ns);
   document.getElementById('fNs').parentElement.hidden = !!(x && x.kind==='skipped');
@@ -810,6 +850,7 @@ function openSlot(date,h,s){
   document.getElementById('bSkip').hidden = !(x && x.kind==='rule');
   document.getElementById('bUnskip').hidden = !(x && x.kind==='skipped');
   document.getElementById('bDelete').hidden = !x;
+  document.getElementById('bCxl').hidden = !(x && (x.kind==='booking'||x.kind==='rule'));
   document.getElementById('bDelete').textContent = x && x.kind!=='booking' ? 'この日以降の固定をやめる' : '削除';
   updateLink(); renderHist();
   hideSug();
@@ -827,6 +868,9 @@ function updateLink(){
   box.innerHTML = `<a href="${esc(u)}" target="_blank" rel="noopener">診療報酬システムを開く(${esc(name)})</a>`;
 }
 
+// 後期高齢者(患者名簿に記録)
+function isKouki(name){ const p=S.patients.find(p=>p.name===name); return !!(p&&p.kouki); }
+function kTag(name){ return isKouki(name)?'<b class="kouki">🔸後</b>':''; }
 function addPatient(name,kana){
   name=name.trim(); if(!name) return;
   if(!S.patients.some(p=>p.name===name)) S.patients.push({name, kana:(kana||'').trim()});
@@ -860,6 +904,7 @@ document.getElementById('bSave').onclick = ()=>{
   if(document.getElementById('fNs').checked) S.noshow[k]=true; else delete S.noshow[k];
   cleanRules();
   addPatient(name);
+  { const p=S.patients.find(p=>p.name===name); if(p){ if(document.getElementById('fKouki').checked) p.kouki=true; else delete p.kouki; } }
   save(); render(); dlg.close();
 };
 document.getElementById('bDelete').onclick = ()=>{
@@ -870,6 +915,34 @@ document.getElementById('bDelete').onclick = ()=>{
   cleanRules();
   save(); render(); dlg.close();
 };
+// キャンセル:枠から消して、その日のMEMO(備考)に書き足す。受診履歴には「キャンセル」で残す
+document.getElementById('bCxl').onclick = ()=>{ dlg.close(); doCancel(cur.date,cur.h,cur.s,cur.x); };
+function doCancel(date,h,s,x){
+  const k=key(date,h,s), snap=JSON.stringify(S);
+  if(x.kind==='booking') delete S.bookings[k]; else S.skips[x.rule.id+'|'+date]='cancel';
+  delete S.noshow[k];
+  (S.cancels=S.cancels||[]).push({date,h,s,name:x.name,type:x.type||'normal',memo:x.memo||''});
+  const line=`${h}:00 ${x.name}さん キャンセル`;
+  S.dayMemos[date] = S.dayMemos[date] ? S.dayMemos[date].replace(/\s+$/,'')+'\n'+line : line;
+  moved(snap, `${x.name}さんの ${h}:00 をキャンセルにしました(枠を空けて、MEMOに書きました)`);
+}
+// このコマだけ消す(固定客はこの日だけ空ける。メモには書かない)
+function doDelete(date,h,s,x){
+  const k=key(date,h,s), snap=JSON.stringify(S);
+  if(x.kind==='booking') delete S.bookings[k]; else S.skips[x.rule.id+'|'+date]='moved';
+  delete S.noshow[k];
+  moved(snap, `${x.name}さんの ${h}:00 を消しました`);
+}
+const dlgDel=document.getElementById('dlgDel'); let delCur=null;
+function askDel(from,x){
+  delCur={...from,x}; const d=parse(from.date);
+  document.getElementById('delTitle').textContent=`${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]}) ${from.h}:00${from.s?'(2人目)':''}`;
+  document.getElementById('delText').innerHTML=`<b>${esc(x.name)}</b> さんのこのコマを消しますか？`+(x.kind==='rule'?'<br><small>固定客です。消えるのはこの日だけで、次回からの固定はそのまま残ります。</small>':'');
+  dlgDel.showModal();
+}
+document.getElementById('delNo').onclick=()=>dlgDel.close();
+document.getElementById('delYes').onclick=()=>{ dlgDel.close(); const c=delCur; doDelete(c.date,c.h,c.s,c.x); };
+document.getElementById('delCxl').onclick=()=>{ dlgDel.close(); const c=delCur; doCancel(c.date,c.h,c.s,c.x); };
 document.getElementById('bSkip').onclick = ()=>{ S.skips[cur.x.rule.id+'|'+cur.date]=true; save(); render(); dlg.close(); };
 document.getElementById('bUnskip').onclick = ()=>{ delete S.skips[cur.x.rule.id+'|'+cur.date]; save(); render(); dlg.close(); };
 document.getElementById('bCancel').onclick = ()=>dlg.close();
@@ -897,7 +970,7 @@ fName.addEventListener('keydown',e=>{
   if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); sugIdx=(sugIdx+(e.key==='ArrowDown'?1:-1)+items.length)%items.length; items.forEach((x,i)=>x.classList.toggle('act',i===sugIdx)); }
   else if(e.key==='Enter' && sugIdx>=0){ e.preventDefault(); pick(items[sugIdx].dataset.n); }
 });
-function pick(n){ fName.value=n; hideSug(); updateLink(); renderHist(); }
+function pick(n){ fName.value=n; document.getElementById('fKouki').checked=isKouki(n); hideSug(); updateLink(); renderHist(); }
 
 // ---- 受診履歴 ----
 // 個別予約と固定客(休み・別の人で上書きされた日は除く)から、その人の予約日を集める
@@ -906,6 +979,7 @@ function history(name){
   const out=[], seen=new Set();
   const push=(date,h,s,x)=>{ const k=key(date,h,s); if(seen.has(k)) return; seen.add(k); out.push({date,h,s,type:x.type,memo:x.memo,fixed:x.kind==='rule',ns:!!S.noshow[k]}); };
   for(const k in S.bookings){ const b=S.bookings[k]; if(b.name!==name) continue; const [d,h,s]=k.split('|'); push(d,+h,+s,{kind:'booking',...b}); }
+  (S.cancels||[]).forEach(c=>{ if(c.name===name) out.push({date:c.date,h:c.h,s:c.s,type:c.type,memo:c.memo,fixed:false,ns:true,cxl:true}); });
   const limit=ymd(addDays(new Date(),56)); // 固定客は8週間先まで
   S.rules.filter(r=>r.name===name).forEach(r=>{
     const end = r.to && r.to<limit ? r.to : limit;
@@ -952,10 +1026,10 @@ function histHtml(name){
   if(!name) return '';
   const list=history(name), today=ymd(new Date());
   const fut=list.filter(x=>x.date>=today).reverse(), past=list.filter(x=>x.date<today), done=past.filter(x=>!x.ns);
-  const row=x=>{ const d=parse(x.date); return `<div class="hr ${x.date>=today?'future':''} ${x.ns?'ns':''}" data-go="${x.date}"><span>${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})</span><span>${x.h}:00${x.s?'(2人目)':''}</span><span>${x.ns?'<span class="nsl">受診なし</span>　':''}${TYPE_LABEL[x.type]||''}${x.fixed?'・固定':''}${x.memo?'　'+esc(x.memo):''}</span></div>`; };
+  const row=x=>{ const d=parse(x.date); return `<div class="hr ${x.date>=today?'future':''} ${x.ns?'ns':''}" data-go="${x.date}"><span>${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})</span><span>${x.h}:00${x.s?'(2人目)':''}</span><span>${x.ns?`<span class="nsl">${x.cxl?'キャンセル':'受診なし'}</span>　`:''}${TYPE_LABEL[x.type]||''}${x.fixed?'・固定':''}${x.memo?'　'+esc(x.memo):''}</span></div>`; };
   const last = done[0] ? (d=>`${d.getMonth()+1}/${d.getDate()}`)(parse(done[0].date)) : 'なし';
   const nsn = past.length-done.length;
-  return `<div class="hist"><div class="hh"><span>${esc(name)} さんの受診履歴</span><span>受診 ${done.length}回${nsn?`(受診なし ${nsn}回)`:''}・前回 ${last}</span></div>${calHtml(name, (dlg.open&&cur&&cur.date||today).slice(0,7))}<div class="hl">`
+  return `<div class="hist"><div class="hh"><span>${kTag(name)}${esc(name)} さんの受診履歴</span><span>受診 ${done.length}回${nsn?`(受診なし ${nsn}回)`:''}・前回 ${last}</span></div>${calHtml(name, (dlg.open&&cur&&cur.date||today).slice(0,7))}<div class="hl">`
     + (fut.length?`<div class="sec">今後の予約</div>`+fut.map(row).join(''):'')
     + monthLine(done)
     + `<div class="sec">これまで(新しい順)</div>` + (past.length?past.map(row).join(''):'<div class="hr" style="cursor:default">まだありません</div>')
@@ -975,7 +1049,7 @@ function renderP(){
   const q=norm(document.getElementById('pFilter').value);
   const list=S.patients.filter(p=>!q||norm(p.name).includes(q)||norm(p.kana).includes(q))
     .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,'ja'));
-  document.getElementById('plist').innerHTML = list.length ? list.map(p=>`<div><span>${esc(p.name)}<small>${esc(p.kana)}</small></span><span><button type="button" data-h="${esc(p.name)}">履歴</button> <button type="button" data-k="${esc(p.name)}">ふりがな</button> <button type="button" class="danger" data-del="${esc(p.name)}">削除</button></span></div>`).join('') : '<div class="note">まだ登録がありません</div>';
+  document.getElementById('plist').innerHTML = list.length ? list.map(p=>`<div><span>${p.kouki?'<b class="kouki">🔸後</b>':''}${esc(p.name)}<small>${esc(p.kana)}</small></span><span><button type="button" data-h="${esc(p.name)}">履歴</button> <button type="button" data-kk="${esc(p.name)}">${p.kouki?'後期高齢者を外す':'後期高齢者'}</button> <button type="button" data-k="${esc(p.name)}">ふりがな</button> <button type="button" class="danger" data-del="${esc(p.name)}">削除</button></span></div>`).join('') : '<div class="note">まだ登録がありません</div>';
 }
 document.getElementById('btnPatients').onclick=()=>{ document.getElementById('pFilter').value=''; renderP(); dlgP.showModal(); };
 document.getElementById('pFilter').oninput=renderP;
@@ -987,7 +1061,8 @@ document.getElementById('pAdd').onclick=()=>{
   n.value=''; k.value=''; save(); renderP(); n.focus();
 };
 document.getElementById('plist').onclick=e=>{
-  const del=e.target.dataset.del, kn=e.target.dataset.k, hn=e.target.dataset.h;
+  const del=e.target.dataset.del, kn=e.target.dataset.k, hn=e.target.dataset.h, kk=e.target.dataset.kk;
+  if(kk){ const p=S.patients.find(p=>p.name===kk); if(p.kouki) delete p.kouki; else p.kouki=true; save(); renderP(); render(); return; }
   if(hn){ openHist(hn); return; }
   if(del){ if(confirm(del+' を名簿から削除しますか？(予約は消えません)')){ S.patients=S.patients.filter(p=>p.name!==del); save(); renderP(); } }
   if(kn){ const p=S.patients.find(p=>p.name===kn); const v=prompt(kn+' のふりがな',p.kana||''); if(v!==null){ p.kana=v.trim(); save(); renderP(); } }
@@ -1080,7 +1155,7 @@ document.getElementById('eGo').onclick=()=>{
     const memo=S.dayMemos[ds];
     body+=`<section${i===0?' class="today"':''}><h2 class="${d.getDay()===0?'sun':d.getDay()===6?'sat':''}">${d.getMonth()+1}月${d.getDate()}日(${DOW[d.getDay()]})${i===0?' <span class="tb">今日</span>':''}<small>${list.length}人</small></h2>`;
     if(withMemo&&memo) body+=`<div class="dm">${esc(memo)}</div>`;
-    body+= list.length ? list.map(x=>`<div class="r ${x.type||'normal'}"><span class="tm">${x.h}:00${x.s?'<br><small>2人目</small>':''}</span><span class="nm">${mark(x)}${esc(x.name)}${withMemo&&x.memo?`<small>${esc(x.memo)}</small>`:''}</span></div>`).join('') : '<div class="no">予約なし</div>';
+    body+= list.length ? list.map(x=>`<div class="r ${x.type||'normal'}"><span class="tm">${x.h}:00${x.s?'<br><small>2人目</small>':''}</span><span class="nm">${isKouki(x.name)?'<b style="color:#b45309">🔸後</b>':''}${mark(x)}${esc(x.name)}${withMemo&&x.memo?`<small>${esc(x.memo)}</small>`:''}</span></div>`).join('') : '<div class="no">予約なし</div>';
     body+='</section>';
   }
   const html=`<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>予約表(閲覧用)${now}</title><style>
@@ -1167,7 +1242,7 @@ function renderDay(){
   if(list.length && dDate<=ymd(new Date())){ const left=list.filter(x=>!x.ns && !DONE[key(dDate,x.h,x.s)]).length; document.getElementById('dSum').innerHTML += left ? `<span class="todo">報酬システム未入力 ${left}人</span>` : `<span style="color:#15803d;font-weight:bold">報酬システム 全員入力済み</span>`; }
   document.getElementById('dList').innerHTML = list.length
     ? `<table class="dtable"><tr><th>時間</th><th>氏名</th><th>区分</th><th>メモ</th><th>受診なし</th><th>報酬入力済</th></tr>`
-      + list.map(x=>`<tr class="${x.ns?'ns':DONE[key(dDate,x.h,x.s)]?'done':''}"><td>${x.h}:00${x.s?'(2人目)':''}</td><td><span class="nm">${esc(x.name)}</span>${x.kind==='rule'?' <b class="tag f">固</b>':''}</td><td>${x.type==='new'?'<b class="maru">新</b>':x.type==='visit'?'<b class="tag v">往</b>':'<b class="kaku">既</b>'}${TYPE_LABEL[x.type]||''}</td><td>${esc(x.memo||'')}</td><td class="c"><input type="checkbox" data-ns="${key(dDate,x.h,x.s)}" ${x.ns?'checked':''} ${ro?'disabled':''}></td><td class="c">${x.ns?'<span class="dn">—</span>':`<input type="checkbox" data-done="${key(dDate,x.h,x.s)}" ${DONE[key(dDate,x.h,x.s)]?'checked':''}>`}</td></tr>`).join('')
+      + list.map(x=>`<tr class="${x.ns?'ns':DONE[key(dDate,x.h,x.s)]?'done':''}"><td>${x.h}:00${x.s?'(2人目)':''}</td><td>${kTag(x.name)}<span class="nm">${esc(x.name)}</span>${x.kind==='rule'?' <b class="tag f">固</b>':''}</td><td>${x.type==='new'?'<b class="maru">新</b>':x.type==='visit'?'<b class="tag v">往</b>':'<b class="kaku">既</b>'}${TYPE_LABEL[x.type]||''}</td><td>${esc(x.memo||'')}</td><td class="c"><input type="checkbox" data-ns="${key(dDate,x.h,x.s)}" ${x.ns?'checked':''} ${ro?'disabled':''}></td><td class="c">${x.ns?'<span class="dn">—</span>':`<input type="checkbox" data-done="${key(dDate,x.h,x.s)}" ${DONE[key(dDate,x.h,x.s)]?'checked':''}>`}</td></tr>`).join('')
       + '</table>'
     : '<div class="note">この日の予約はありません。</div>';
 }
