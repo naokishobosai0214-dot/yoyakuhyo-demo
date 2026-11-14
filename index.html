@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 22:27">
+<meta name="app-ver" content="2026-11-14 22:40">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -425,7 +425,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
 <dialog id="dlgE">
   <div class="dh">スマホ・LINEで予約を見る</div>
   <div class="db">
-    <div class="note"><b>LINEで送る</b>：今日からの予約を文字のリストにして、LINEに送ります。LINEの画面がひらいたら、送り先に<b>先生ご自身(Keepメモ)</b>を選んでください。予約を変えたら、もう一度送ってください。</div>
+    <div class="note"><b>LINEで送る</b>：今日からの予約を文字のリストにして、LINEに送ります。LINEの画面がひらいたら、送り先に<b>先生ご自身(Keepメモ)</b>を選んでください(パソコンでは、リストがコピーされるので、LINE アプリの Keepメモに Ctrl+V で貼り付けます)。予約を変えたら、もう一度送ってください。</div>
     <label class="row">期間
       <select id="eWeeks">
         <option value="7" selected>今日から1週間</option>
@@ -1314,16 +1314,23 @@ function lineText(n,withMemo){
   return out.join('\n');
 }
 function eOpts(){ return [+document.getElementById('eWeeks').value, document.getElementById('eMemo').checked]; }
-document.getElementById('eLine').onclick=()=>{
+// iPad・スマホは LINE アプリを開く。パソコンは LINE の共有ページが紹介ページになってしまうので、コピーして貼り付けてもらう
+function isMobileDev(){ return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1); }
+async function copyText(txt){
+  try{ await navigator.clipboard.writeText(txt); return true; }catch(e){}
+  try{ const t=document.createElement('textarea'); t.value=txt; t.style.position='fixed'; t.style.opacity='0'; dlgE.appendChild(t); t.select(); const ok=document.execCommand('copy'); t.remove(); return ok; }catch(e){ return false; }
+}
+document.getElementById('eLine').onclick=async()=>{
   const txt=lineText(...eOpts());
-  window.open('https://line.me/R/share?text='+encodeURIComponent(txt),'_blank','noopener');
-  dlgE.close();
+  if(isMobileDev()){ window.open('https://line.me/R/share?text='+encodeURIComponent(txt),'_blank','noopener'); dlgE.close(); return; }
+  if(await copyText(txt)){ alert('予約のリストをコピーしました。\nパソコンの LINE アプリで Keepメモ(または自分だけのトーク)を開き、入力欄に Ctrl+V で貼り付けて送ってください。'); dlgE.close(); }
+  else alert('コピーできませんでした。「ファイルで書き出す」を使ってください。');
 };
 document.getElementById('eShare').onclick=async()=>{
   const txt=lineText(...eOpts());
   if(navigator.share){ try{ await navigator.share({text:txt}); dlgE.close(); return; }catch(e){ if(e.name==='AbortError') return; } }
-  try{ await navigator.clipboard.writeText(txt); alert('予約のリストをコピーしました。LINEを開いて、Keepメモなどに貼り付けてください。'); dlgE.close(); }
-  catch(e){ alert('この端末では送れませんでした。「ファイルで書き出す」を使ってください。'); }
+  if(await copyText(txt)){ alert('予約のリストをコピーしました。LINEを開いて、Keepメモなどに貼り付けてください。'); dlgE.close(); }
+  else alert('この端末では送れませんでした。「ファイルで書き出す」を使ってください。');
 };
 document.getElementById('eGo').onclick=()=>{
   const n=+document.getElementById('eWeeks').value, withMemo=document.getElementById('eMemo').checked;
