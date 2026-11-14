@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 22:40">
+<meta name="app-ver" content="2026-11-14 22:47">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -422,6 +422,12 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
 </dialog>
 
 <!-- スマホ閲覧用の書き出し -->
+<dialog id="dlgLA">
+  <div class="dh">予約を LINE で送る</div>
+  <div class="db"><p id="laText" style="margin:4px 0 0"></p>
+    <div class="note" style="margin-top:8px">下の「LINEで送る」を押すと LINE がひらきます。送り先に<b>先生ご自身(Keepメモ)</b>を選んで送ってください。</div></div>
+  <div class="df"><button type="button" id="laNo">やめる</button><span class="spacer"></span><button type="button" class="primary" id="laGo" style="font-size:18px;padding:10px 22px">LINEで送る</button></div>
+</dialog>
 <dialog id="dlgE">
   <div class="dh">スマホ・LINEで予約を見る</div>
   <div class="db">
@@ -1124,7 +1130,7 @@ function pick(n){ fName.value=n; setPt(n); hideSug(); updateLink(); renderHist()
 // ---- 受診履歴 ----
 // 個別予約と固定客(休み・別の人で上書きされた日は除く)から、その人の予約日を集める
 const TYPE_LABEL={normal:'既存',new:'新規',visit:'往診'};
-function history(name){
+function ptHistory(name){
   const out=[], seen=new Set();
   const push=(date,h,s,x)=>{ const k=key(date,h,s); if(seen.has(k)) return; seen.add(k); out.push({date,h,s,type:x.type,memo:x.memo,fixed:x.kind==='rule',ns:!!S.noshow[k]}); };
   for(const k in S.bookings){ const b=S.bookings[k]; if(b.name!==name) continue; const [d,h,s]=k.split('|'); push(d,+h,+s,{kind:'booking',...b}); }
@@ -1149,7 +1155,7 @@ function monthLine(done){
 }
 // 患者の受診カレンダー(1か月。◀▶で月を移動。日をクリックでその週へ)
 function calHtml(name,ym){
-  const list=history(name), today=ymd(new Date());
+  const list=ptHistory(name), today=ymd(new Date());
   const [y,m]=ym.split('-').map(Number), first=new Date(y,m-1,1), days=new Date(y,m,0).getDate();
   const by={}; list.forEach(x=>{ if(x.date.startsWith(ym) && (!by[x.date] || by[x.date].ns)) by[x.date]=x; });
   const cnt=list.filter(x=>x.date.startsWith(ym) && x.date<today && !x.ns).length;
@@ -1173,7 +1179,7 @@ document.addEventListener('click',e=>{
 });
 function histHtml(name){
   if(!name) return '';
-  const list=history(name), today=ymd(new Date());
+  const list=ptHistory(name), today=ymd(new Date());
   const fut=list.filter(x=>x.date>=today).reverse(), past=list.filter(x=>x.date<today), done=past.filter(x=>!x.ns);
   const row=x=>{ const d=parse(x.date); return `<div class="hr ${x.date>=today?'future':''} ${x.ns?'ns':''}" data-go="${x.date}"><span>${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}(${DOW[d.getDay()]})</span><span>${x.h}:00${x.s?'(2人目)':''}</span><span>${x.ns?`<span class="nsl">${x.cxl?'キャンセル':'受診なし'}</span>　`:''}${TYPE_LABEL[x.type]||''}${x.fixed?'・固定':''}${x.memo?'　'+esc(x.memo):''}</span></div>`; };
   const last = done[0] ? (d=>`${d.getMonth()+1}/${d.getDate()}`)(parse(done[0].date)) : 'なし';
@@ -1270,7 +1276,7 @@ function renderAll(){
   Object.values(S.bookings).forEach(b=>names.add(b.name)); S.rules.forEach(r=>names.add(r.name));
   const kana=n=>{ const p=S.patients.find(p=>p.name===n); return p&&p.kana||''; };
   const rows=[...names].filter(n=>!q||norm(n).includes(q)||norm(kana(n)).includes(q)).map(n=>{
-    const list=history(n), past=list.filter(x=>x.date<today), done=past.filter(x=>!x.ns);
+    const list=ptHistory(n), past=list.filter(x=>x.date<today), done=past.filter(x=>!x.ns);
     const fut=list.filter(x=>x.date>=today).reverse();
     const rules=S.rules.filter(r=>r.name===n && (!r.to||r.to>=today));
     const types=new Set(done.map(x=>x.type));
@@ -1511,6 +1517,17 @@ document.getElementById('btnUpdate').onclick=async()=>{
 };
 document.getElementById('upGo').onclick=goLatest;
 document.getElementById('btnUpdate').title+=`\n今の版：${APP_VER}`;
+// 決まった時間の「LINEで送る」:iPad のショートカット(オートメーション)が ?line=7 付きでこのページを開く
+// → 確認の画面を出して、ボタン1回で LINE へ(自動で LINE を開くのは iPad が止めるので、押してもらう)
+const LA=(()=>{ const q=new URLSearchParams(location.search); if(!q.has('line')) return null; const n=+q.get('line'); return {days:[7,14,28].includes(n)?n:7, memo:q.get('memo')==='1'}; })();
+if(LA){
+  try{ history.replaceState(null,'',location.pathname); }catch(e){}
+  const t0=new Date(); let cnt=0; for(let i=0;i<LA.days;i++) cnt+=dayList(ymd(addDays(t0,i))).filter(x=>!x.ns).length;
+  document.getElementById('laText').innerHTML=`今日から<b>${LA.days===7?'1週間':LA.days===14?'2週間':'4週間'}</b>の予約(${cnt}件)を LINE に送ります。`;
+  document.getElementById('laNo').onclick=()=>document.getElementById('dlgLA').close();
+  document.getElementById('laGo').onclick=()=>{ document.getElementById('eWeeks').value=String(LA.days); document.getElementById('eMemo').checked=LA.memo; document.getElementById('dlgLA').close(); document.getElementById('eLine').click(); };
+  setTimeout(()=>document.getElementById('dlgLA').showModal(),0);
+}
 if(/[?&]v=\d/.test(location.search)) try{ history.replaceState(null,'',location.pathname); }catch(e){}
 checkUpdate();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') checkUpdate(); });
