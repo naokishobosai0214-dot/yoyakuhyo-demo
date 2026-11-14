@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 22:24">
+<meta name="app-ver" content="2026-11-14 22:27">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -320,7 +320,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>後期高齢者・負担割合</b>：予約画面の「後期高齢者」と「負担割合」を選ぶと、名前の前に「後期」を四角で囲んだ印と「1割」のように出ます(後期でない人は、3割以外のときだけ「2割」などと出ます)。患者名簿に記録されるので、次回からは自動で付きます。</li>
       <li><b>お休みの枠に別の人</b>：隔週の人の「(休み)」の枠をクリックすると、空きとして別の人の予約を入れられます。固定客を「この日だけ休み」にすると、その日のMEMO欄に「9:00 ○○さん 休み」と出て、すぐ右の「戻す」で元に戻せます。</li>
       <li><b>ほかの曜日もまとめて固定</b>：「固定客にする」にチェックすると曜日の一覧が出ます。ほかの曜日にチェックして時間を選べば(例：火10時・金12時)、一度に固定で入ります。</li>
-      <li><b>不定期の人の次の予約</b>：固定客にしない予約画面の「＋ 次の予約を追加」で、日にちと時間を1回ずつ選んで続けて入れられます(例：今週水14時 → 10日後の金16時 → その10日後の月10時)。初めは前の日の10日後が入っています。</li>
+      <li><b>不定期の人の次の予約</b>：予約画面の「＋ 次の予約を追加」で(固定客にするときも使えます)、日にちと時間を1回ずつ選んで続けて入れられます(例：今週水14時 → 10日後の金16時 → その10日後の月10時)。初めは前の日の10日後が入っています。</li>
     </ol>
     <div class="note">データはこのパソコンのこのブラウザの中だけに保存されます(インターネットには送られません)。<br>まだ入っていないもの：診療報酬システムとの連携、診療報酬システムとの齟齬チェック。</div>
   </div>
@@ -354,7 +354,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
         <div class="mdays" id="mdays"></div>
       </div>
       <div id="nextBox" class="nextbox">
-        <div class="note">次の予約も続けて入れる(不定期の人に。日にちと時間を1回ずつ選べます)</div>
+        <div class="note">次の予約も続けて入れる(日にちと時間を1回ずつ選べます。固定客の間に別の日を足すときにも)</div>
         <div id="nextRows"></div>
         <button type="button" id="nextAdd">＋ 次の予約を追加</button>
       </div>
@@ -871,7 +871,7 @@ fEvery.value=2;
 function setEvery(n){ if(n>1){ fEvery.value=n; dlg.querySelector('input[name=every][value=n]').checked=true; } else { fEvery.value=2; dlg.querySelector('input[name=every][value="1"]').checked=true; } }
 function getEvery(){ return dlg.querySelector('input[name=every]:checked').value==='n' ? +fEvery.value : 1; }
 const multiBox=document.getElementById('multiBox');
-fFixed.addEventListener('change',()=>{ everyBox.hidden=multiBox.hidden=!fFixed.checked; nextBox.hidden=fFixed.checked; });
+fFixed.addEventListener('change',()=>{ everyBox.hidden=multiBox.hidden=!fFixed.checked; });
 // ---- 次の予約(不定期):日にち＋時間の行を足していき、保存で個別予約としてまとめて入れる ----
 const nextBox=document.getElementById('nextBox'), nextRows=document.getElementById('nextRows');
 function hourOpts(sel){ const st=S.settings; let o=''; for(let t=st.start;t<=st.end;t++) o+=`<option value="${t}"${t===sel?' selected':''}>${t}:00</option>`; return o; }
@@ -921,7 +921,7 @@ function openSlot(date,h,s){
   fFixed.checked = !!(x && x.kind==='rule');
   setEvery(x && x.rule ? (x.rule.every||1) : 1);
   everyBox.hidden = multiBox.hidden = !fFixed.checked;
-  nextBox.hidden = fFixed.checked || isRO(); nextRows.innerHTML='';
+  nextBox.hidden = isRO(); nextRows.innerHTML='';
   renderMdays(parse(date).getDay(), h);
   info.hidden = !(x && x.kind==='rule') && !sk;
   if(x && x.kind==='rule') info.textContent = `固定客：${everyText(x.rule)} ${DOW[x.rule.dow]}曜 ${x.rule.hour}:00${x.rule.slot?'(2人目)':''}(${x.rule.from}から)。名前・区分・メモを変えると、これから先の分もすべて変わります。間隔を変えると、この日から新しい間隔で数え直します。`;
@@ -1020,7 +1020,7 @@ document.getElementById('bSave').onclick = ()=>{
   if(document.getElementById('fNs').checked) S.noshow[k]=true; else delete S.noshow[k];
   let ex=null, nx=null;
   if(fFixed.checked && extraDays().length) ex=addExtraRules(date,data,getEvery());
-  if(!fFixed.checked && nextList().length) nx=addNextBookings(data);
+  if(nextList().length) nx=addNextBookings(data);
   cleanRules();
   addPatient(name);
   { const p=S.patients.find(p=>p.name===name); if(p){ if(document.getElementById('fKouki').checked) p.kouki=true; else delete p.kouki; const fv=document.getElementById('fFutan').value; if(fv==='') delete p.futan; else p.futan=+fv; } }
