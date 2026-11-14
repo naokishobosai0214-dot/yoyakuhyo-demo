@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 22:47">
+<meta name="app-ver" content="2026-11-14 22:54">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -961,7 +961,9 @@ function futanText(f){ return f===undefined||f===null||f==='' ? '' : (+f===0 ? '
 function kTag(name){ const p=ptOf(name); if(!p) return ''; const ft=futanText(p.futan);
   if(p.kouki) return `<b class="kouki"><span class="kb">後期</span>${ft}</b>`;
   return ft && +p.futan!==3 ? `<b class="futan">${ft}</b>` : ''; }
-function setPt(name){ const p=ptOf(name); document.getElementById('fKouki').checked=!!(p&&p.kouki); document.getElementById('fFutan').value = p&&p.futan!==undefined ? String(p.futan) : ''; }
+let ptTouched=false, ptLoaded='';
+function setPt(name){ ptTouched=false; ptLoaded=name; const p=ptOf(name); document.getElementById('fKouki').checked=!!(p&&p.kouki); document.getElementById('fFutan').value = p&&p.futan!==undefined ? String(p.futan) : ''; }
+['fKouki','fFutan'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{ ptTouched=true; }));
 function addPatient(name,kana){
   name=name.trim(); if(!name) return;
   if(!S.patients.some(p=>p.name===name)) S.patients.push({name, kana:(kana||'').trim()});
@@ -1029,7 +1031,7 @@ document.getElementById('bSave').onclick = ()=>{
   if(nextList().length) nx=addNextBookings(data);
   cleanRules();
   addPatient(name);
-  { const p=S.patients.find(p=>p.name===name); if(p){ if(document.getElementById('fKouki').checked) p.kouki=true; else delete p.kouki; const fv=document.getElementById('fFutan').value; if(fv==='') delete p.futan; else p.futan=+fv; } }
+  { const p=S.patients.find(p=>p.name===name); if(p && (ptTouched || ptLoaded===name)){ if(document.getElementById('fKouki').checked) p.kouki=true; else delete p.kouki; const fv=document.getElementById('fFutan').value; if(fv==='') delete p.futan; else p.futan=+fv; } }
   save(); render(); dlg.close();
   if(nx){ if(nx.ng.length) alert(`次の予約：\n${nx.added.length?'入れました：'+nx.added.join('、')+'\n':''}入れられませんでした(1人目・2人目とも埋まっています)：${nx.ng.join('、')}`); else moved(snap0, `次の予約も入れました：${nx.added.join('、')}`); }
   if(ex){ if(ex.ng.length) alert(`ほかの曜日の固定：\n${ex.added.length?'入れました：'+ex.added.join('、')+'\n':''}入れられませんでした(1人目・2人目とも埋まっている回があります)：${ex.ng.join('、')}`); else moved(snap0, `ほかの曜日にも固定で入れました：${ex.added.join('、')}`); }
@@ -1111,6 +1113,7 @@ function norm(s){ return kata2hira((s||'').replace(/[\s　]/g,'')); }
 function hideSug(){ sug.style.display='none'; sugIdx=-1; }
 fName.addEventListener('input',()=>{
   updateLink(); renderHist();
+  { const n=fName.value.trim(); if(n!==ptLoaded && !ptTouched) setPt(n); }
   const q = norm(fName.value);
   if(!q){ hideSug(); return; }
   const hits = S.patients.filter(p=>norm(p.name).includes(q)||norm(p.kana).includes(q)).slice(0,20);
