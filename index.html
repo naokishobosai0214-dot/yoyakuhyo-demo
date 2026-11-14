@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 21:59">
+<meta name="app-ver" content="2026-11-14 22:11">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -311,7 +311,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>キャンセル</b>：予約画面の「キャンセル(枠から消す)」で、その枠が空き、その日のMEMO欄に「10:00 ○○さん キャンセル」と書き込まれます(受診履歴にも残ります)。</li>
       <li><b>長押しで消す</b>：予約を長押しして、動かさずに離すと「このコマを消す」が出ます(固定客はその日だけ)。消したあと8秒間は「元に戻す」が押せます。</li>
       <li><b>後期高齢者・負担割合</b>：予約画面の「後期高齢者」と「負担割合」を選ぶと、名前の前に「後期」を四角で囲んだ印と「1割」のように出ます(後期でない人は、3割以外のときだけ「2割」などと出ます)。患者名簿に記録されるので、次回からは自動で付きます。</li>
-      <li><b>お休みの枠に別の人</b>：隔週の人の「(休み)」の枠をクリックすると、空きとして別の人の予約を入れられます。</li>
+      <li><b>お休みの枠に別の人</b>：隔週の人の「(休み)」の枠をクリックすると、空きとして別の人の予約を入れられます。固定客を「この日だけ休み」にすると、その日のMEMO欄に「9:00 ○○さん 休み」と書き込まれます(「休みを取り消す」で消えます)。</li>
       <li><b>ほかの曜日もまとめて固定</b>：「固定客にする」にチェックすると曜日の一覧が出ます。ほかの曜日にチェックして時間を選べば(例：火10時・金12時)、一度に固定で入ります。</li>
     </ol>
     <div class="note">データはこのパソコンのこのブラウザの中だけに保存されます(インターネットには送られません)。<br>まだ入っていないもの：診療報酬システムとの連携、診療報酬システムとの齟齬チェック。</div>
@@ -1035,11 +1035,14 @@ function askDel(from,x){
 document.getElementById('delNo').onclick=()=>dlgDel.close();
 document.getElementById('delYes').onclick=()=>{ dlgDel.close(); const c=delCur; doDelete(c.date,c.h,c.s,c.x); };
 document.getElementById('delCxl').onclick=()=>{ dlgDel.close(); const c=delCur; doCancel(c.date,c.h,c.s,c.x); };
-document.getElementById('bSkip').onclick = ()=>{ S.skips[cur.x.rule.id+'|'+cur.date]=true; save(); render(); dlg.close(); };
+// 固定客の「この日だけ休み」:その日のMEMOに「9:00 ○○さん 休み」と書く。取り消したらその行を消す
+function memoAdd(date,line){ S.dayMemos[date] = S.dayMemos[date] ? S.dayMemos[date].replace(/\s+$/,'')+'\n'+line : line; }
+function memoDel(date,line){ const m=S.dayMemos[date]; if(!m) return; const ls=m.split('\n'), j=ls.indexOf(line); if(j<0) return; ls.splice(j,1); const v=ls.join('\n').trim(); if(v) S.dayMemos[date]=v; else delete S.dayMemos[date]; }
+document.getElementById('bSkip').onclick = ()=>{ const r=cur.x.rule; S.skips[r.id+'|'+cur.date]=true; memoAdd(cur.date,`${r.hour}:00 ${r.name}さん 休み`); save(); render(); dlg.close(); };
 document.getElementById('bUnskip').onclick = ()=>{
   const k=key(cur.date,cur.h,cur.s);
   if(S.bookings[k] && !confirm(`この枠には ${S.bookings[k].name} さんの予約が入っています。${cur.sk.name} さんの休みを取り消すと、${S.bookings[k].name} さんの予約が優先して表示されます。取り消しますか？`)) return;
-  delete S.skips[cur.sk.id+'|'+cur.date]; save(); render(); dlg.close(); };
+  delete S.skips[cur.sk.id+'|'+cur.date]; memoDel(cur.date,`${cur.sk.hour}:00 ${cur.sk.name}さん 休み`); save(); render(); dlg.close(); };
 document.getElementById('bCancel').onclick = ()=>dlg.close();
 function cleanRules(){ S.rules = S.rules.filter(r=>!r.to || r.to>=r.from); }
 
