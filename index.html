@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 21:48">
+<meta name="app-ver" content="2026-11-14 21:55">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -190,6 +190,7 @@ body:not(.fs) .fsbar .fsonly{display:none}
 .bk .memo{color:var(--sub);font-size:11px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tag{display:inline-block;font-size:10px;padding:0 3px;border-radius:3px;margin-right:2px;color:#fff;vertical-align:1px}
 .kouki{font-weight:bold;color:#b45309;margin-right:3px;white-space:nowrap}
+.kouki .kb{display:inline-block;border:1.5px solid #b45309;border-radius:2px;padding:0 2px;line-height:1.2;background:transparent;color:#b45309;margin-right:2px;font-size:11px;vertical-align:1px}
 .futan{font-weight:bold;color:#7c3aed;margin-right:3px;white-space:nowrap;font-size:11px}
 .kbox{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
 .mdays{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:4px 10px;margin-top:4px}
@@ -277,7 +278,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span><i class="sw" style="background:var(--new);border-color:var(--new-b)"></i><b class="maru">新</b>新規(赤)</span>
   <span><i class="sw" style="background:var(--visit);border-color:var(--visit-b)"></i><b class="tag v">往</b>往診(黄)</span>
   <span><b class="tag f">固</b>固定客(毎週自動で表示)</span>
-  <span><b class="kouki">🔸後1割</b>後期高齢者・負担割合</span>
+  <span><b class="kouki"><span class="kb">後期</span>1割</b>後期高齢者・負担割合</span>
   <span><i class="hsw closedsw"></i>営業時間外</span>
   <span><i class="hsw offsw"></i>休診日(日曜・祝日)</span>
   <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。予約はマウスで引っぱって別のマスへ移動できます。押したまま動かさずに離すと、そのコマだけ消せます。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。予約は長押ししてから指を動かすと、別のマスへ移動できます。長押しして動かさずに離すと、そのコマだけ消せます。</span>
@@ -309,7 +310,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>全画面</b>：最初はメニューを隠して予約表を大きく表示します。右下の「☰ メニュー」でボタンの列が出て、「⛶ 表を大きく」でまた隠れます。週の移動は右下の ◀ ▶ でもできます。</li>
       <li><b>キャンセル</b>：予約画面の「キャンセル(枠から消す)」で、その枠が空き、その日のMEMO欄に「10:00 ○○さん キャンセル」と書き込まれます(受診履歴にも残ります)。</li>
       <li><b>長押しで消す</b>：予約を長押しして、動かさずに離すと「このコマを消す」が出ます(固定客はその日だけ)。消したあと8秒間は「元に戻す」が押せます。</li>
-      <li><b>後期高齢者・負担割合</b>：予約画面の「後期高齢者」と「負担割合」を選ぶと、名前の前に「🔸後1割」のように出ます(後期でない人は、3割以外のときだけ「2割」などと出ます)。患者名簿に記録されるので、次回からは自動で付きます。</li>
+      <li><b>後期高齢者・負担割合</b>：予約画面の「後期高齢者」と「負担割合」を選ぶと、名前の前に「後期」を四角で囲んだ印と「1割」のように出ます(後期でない人は、3割以外のときだけ「2割」などと出ます)。患者名簿に記録されるので、次回からは自動で付きます。</li>
       <li><b>お休みの枠に別の人</b>：隔週の人の「(休み)」の枠をクリックすると、空きとして別の人の予約を入れられます。</li>
       <li><b>ほかの曜日もまとめて固定</b>：「固定客にする」にチェックすると曜日の一覧が出ます。ほかの曜日にチェックして時間を選べば(例：火10時・金12時)、一度に固定で入ります。</li>
     </ol>
@@ -329,7 +330,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       </label>
       <div class="sug" id="sug"></div>
       <div class="kbox"><label><input type="checkbox" id="fKouki"> 後期高齢者</label><label style="display:inline-flex;gap:6px;align-items:center">負担割合 <select id="fFutan" style="width:auto"><option value="">—</option><option value="1">1割</option><option value="2">2割</option><option value="3">3割</option><option value="0">負担なし</option></select></label></div>
-      <div class="note" style="margin-top:-4px">予約表に「🔸後1割」(後期高齢者)、「2割」(後期でない人は3割以外のとき)のように出ます。名簿に記録され、次回からも自動で付きます。</div>
+      <div class="note" style="margin-top:-4px">予約表に「[後期]1割」(後期高齢者。「後期」は四角で囲みます)、「2割」(後期でない人は3割以外のとき)のように出ます。名簿に記録され、次回からも自動で付きます。</div>
       <div class="radios">
         <label><input type="radio" name="type" value="normal" checked>既存</label>
         <label><input type="radio" name="type" value="new">新規</label>
@@ -896,9 +897,9 @@ function updateLink(){
 function isKouki(name){ const p=S.patients.find(p=>p.name===name); return !!(p&&p.kouki); }
 function ptOf(name){ return S.patients.find(p=>p.name===name); }
 function futanText(f){ return f===undefined||f===null||f==='' ? '' : (+f===0 ? '負担なし' : f+'割'); }
-// 後期高齢者は「🔸後1割」、後期でない人は3割以外のときだけ「2割」などを出す
+// 後期高齢者は「[後期]1割」(後期は四角の枠だけ・中は白抜きにしない。固の黒い四角と見分けるため)、後期でない人は3割以外のときだけ「2割」などを出す
 function kTag(name){ const p=ptOf(name); if(!p) return ''; const ft=futanText(p.futan);
-  if(p.kouki) return `<b class="kouki">🔸後${ft}</b>`;
+  if(p.kouki) return `<b class="kouki"><span class="kb">後期</span>${ft}</b>`;
   return ft && +p.futan!==3 ? `<b class="futan">${ft}</b>` : ''; }
 function setPt(name){ const p=ptOf(name); document.getElementById('fKouki').checked=!!(p&&p.kouki); document.getElementById('fFutan').value = p&&p.futan!==undefined ? String(p.futan) : ''; }
 function addPatient(name,kana){
@@ -1244,7 +1245,7 @@ function lineText(n,withMemo){
     if(!list.length) out.push('　予約なし');
     list.forEach(x=>{
       const mk=(x.type==='new'?'〔新〕':x.type==='visit'?'〔往〕':'')+(x.kind==='rule'?'〔固〕':'');
-      const kt=plain(kTag(x.name));
+      const kt=plain(kTag(x.name).replace(/<span class="kb">後期<\/span>/,'【後期】'));
       out.push(`　${String(x.h).padStart(2,' ')}:00${x.s?'②':''} ${x.name}${kt?' '+kt:''}${mk?' '+mk:''}${withMemo&&x.memo?'　…'+x.memo:''}`);
     });
     if(withMemo&&memo) out.push('　📝'+memo.replace(/\n/g,'／'));
@@ -1298,7 +1299,7 @@ h2 small{margin-left:auto;font-weight:normal;color:#5d6878}h2.sun{color:#c0262d}
 .kk{width:16px;height:16px;border:1.5px solid #1f5fd1;color:#1f5fd1;border-radius:2px;background:#fff}
 .mr{width:16px;height:16px;border:1.5px solid #d42a2a;color:#d42a2a;border-radius:50%;background:#fff}
 .w{width:16px;height:16px;border-radius:50%;background:#d42a2a;color:#fff;font-weight:bold;font-size:11px}
-.kouki{color:#b45309;margin-right:3px}.futan{color:#7c3aed;margin-right:3px;font-size:12px}
+.kouki{color:#b45309;margin-right:3px;font-weight:bold}.kouki .kb{display:inline-block;border:1.5px solid #b45309;border-radius:2px;padding:0 2px;margin-right:2px;font-size:12px}.futan{color:#7c3aed;margin-right:3px;font-size:12px}
 footer{font-size:11px;color:#9aa3af;text-align:center;padding:10px 10px 24px}
 </style></head><body><header><h1>予約表(閲覧用)</h1><p>${now} 時点・${n/7}週間分。変更があったときは最新のファイルを見てください。</p></header>
 <div class="lg"><span><b class="kk">既</b>既存</span><span><b class="mr">新</b>新規</span><span><b class="t v">往</b>往診</span><span><b class="t f">固</b>固定客</span></div>
