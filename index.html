@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 22:54">
+<meta name="app-ver" content="2026-11-14 22:57">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -160,6 +160,9 @@ td:hover .add2{opacity:1}
 .bk .nm{font-weight:bold}
 .bk.ns{background:#f1f1f1!important;border-color:#b0b0b0!important;color:#888}
 .bk.ns .nm{text-decoration:line-through}
+.bk.done{opacity:.55}
+.bk .dck{display:inline-block;margin-left:4px;padding:0 4px;border-radius:9px;background:#15803d;color:#fff;font-size:11px;line-height:1.4;vertical-align:1px}
+.donebox{display:flex;gap:6px;align-items:center;margin:6px 0;padding:6px 8px;border:1px solid #bbf7d0;background:#f0fdf4;border-radius:8px}
 .nsmark{display:inline-block;font-size:10px;padding:0 3px;border-radius:3px;margin-right:2px;color:#fff;background:#6b7280;vertical-align:1px}
 .hist .hr.ns{color:#9aa3af}
 .hist .hr.ns .nsl{color:#b42318;font-weight:bold}
@@ -286,6 +289,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
   <span><i class="sw" style="background:var(--visit);border-color:var(--visit-b)"></i><b class="tag v">往</b>往診(黄)</span>
   <span><b class="tag f">固</b>固定客(毎週自動で表示)</span>
   <span><b class="kouki"><span class="kb">後期</span>1割</b>後期高齢者・負担割合</span>
+  <span><b class="dck" style="display:inline-block;padding:0 4px;border-radius:9px;background:#15803d;color:#fff;font-size:11px;margin-right:3px">✓</b>鍼フォニー入力済み(薄く表示)</span>
   <span><i class="hsw closedsw"></i>営業時間外</span>
   <span><i class="hsw offsw"></i>休診日(日曜・祝日)</span>
   <span class="hide-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスにマウスを乗せて「＋2人目」を押します。予約はマウスで引っぱって別のマスへ移動できます。押したまま動かさずに離すと、そのコマだけ消せます。</span><span class="show-touch">1時間に1人が基本。2人入れたいときは、予約の入ったマスの「＋2人目」を押します。予約は長押ししてから指を動かすと、別のマスへ移動できます。長押しして動かさずに離すと、そのコマだけ消せます。</span>
@@ -320,6 +324,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
       <li><b>後期高齢者・負担割合</b>：予約画面の「後期高齢者」と「負担割合」を選ぶと、名前の前に「後期」を四角で囲んだ印と「1割」のように出ます(後期でない人は、3割以外のときだけ「2割」などと出ます)。患者名簿に記録されるので、次回からは自動で付きます。</li>
       <li><b>お休みの枠に別の人</b>：隔週の人の「(休み)」の枠をクリックすると、空きとして別の人の予約を入れられます。固定客を「この日だけ休み」にすると、その日のMEMO欄に「9:00 ○○さん 休み」と出て、すぐ右の「戻す」で元に戻せます。</li>
       <li><b>ほかの曜日もまとめて固定</b>：「固定客にする」にチェックすると曜日の一覧が出ます。ほかの曜日にチェックして時間を選べば(例：火10時・金12時)、一度に固定で入ります。</li>
+      <li><b>鍼フォニー入力済み</b>：予約画面の「鍼フォニーに入力済み」、または受診者一覧の「報酬入力済」にチェックすると、予約表のその予約に緑の ✓ が付いて薄くなります(チェックはこの端末だけに記録)。</li>
       <li><b>不定期の人の次の予約</b>：予約画面の「＋ 次の予約を追加」で(固定客にするときも使えます)、日にちと時間を1回ずつ選んで続けて入れられます(例：今週水14時 → 10日後の金16時 → その10日後の月10時)。初めは前の日の10日後が入っています。</li>
     </ol>
     <div class="note">データはこのパソコンのこのブラウザの中だけに保存されます(インターネットには送られません)。<br>まだ入っていないもの：診療報酬システムとの連携、診療報酬システムとの齟齬チェック。</div>
@@ -362,6 +367,7 @@ input[type=text],input[type=url],textarea,select{font:inherit;border:1px solid v
         <textarea id="fMemo" rows="3"></textarea>
       </label>
       <label class="nsbox"><input type="checkbox" id="fNs"> この日は受診しなかった(連絡なしで来なかった等。キャンセルは下の「キャンセル」ボタンで枠を空けます)</label>
+      <label class="donebox" id="doneBox"><input type="checkbox" id="fDone"> 鍼フォニーに入力済み(予約表に <b class="dck" style="display:inline-block;padding:0 4px;border-radius:9px;background:#15803d;color:#fff;font-size:11px">✓</b> が付き、薄くなります。押すとすぐ記録されます)</label>
       <div id="linkBox" class="note"></div>
       <div id="hist"></div>
     </div>
@@ -655,12 +661,13 @@ function lookup(date,h,s){
   return null;
 }
 
-function cellHtml(x){
+function cellHtml(x,k){
   if(!x) return '';
   if(x.kind==='skipped' && x.moved) return ''; // ドラッグで別の日時へ移した元の枠は空きとして見せる
   if(x.kind==='skipped') return `<div class="skipped">${esc(x.rule.name)}(休み)</div>`;
   const tags = (x.kind==='rule'?'<b class="tag f">固</b>':'') + ((x.type||'normal')==='normal'?'<b class="kaku">既</b>':'') + (x.type==='new'?'<b class="maru">新</b>':'') + (x.type==='visit'?'<b class="tag v">往</b>':'');
-  return `<div class="bk ${x.type||'normal'} ${x.kind==='rule'?'fixed':''}">${kTag(x.name)}${tags}<span class="nm">${esc(x.name)}</span>${x.memo?`<span class="memo">${esc(x.memo)}</span>`:''}</div>`;
+  const dn = k && DONE[k] && !x.ns;
+  return `<div class="bk ${x.type||'normal'} ${x.kind==='rule'?'fixed':''} ${dn?'done':''}">${kTag(x.name)}${tags}<span class="nm">${esc(x.name)}</span>${dn?'<b class="dck" title="鍼フォニーに入力済み">✓</b>':''}${x.memo?`<span class="memo">${esc(x.memo)}</span>`:''}</div>`;
 }
 
 function render(){
@@ -692,10 +699,10 @@ function render(){
       const x0=lookup(ds,t,0), x1=lookup(ds,t,1);
       const two = !!x1; // 2人目は入っているときだけ表示
       h += `<td class="${isOff(ds)?'off':isOpen(t)&&ds===today?'today':cl}"><div class="slots ${two?'two':''}">`;
-      h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="0">${cellHtml(x0)}${two?'<span class="lbl">1</span>':''}`;
+      h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="0">${cellHtml(x0,key(ds,t,0))}${two?'<span class="lbl">1</span>':''}`;
       if(!two && x0 && x0.kind!=='skipped') h += `<button type="button" class="add2" data-d="${ds}" data-h="${t}" title="この時間に2人目を入れる">＋2人目</button>`;
       h += '</div>';
-      if(two) h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="1">${cellHtml(x1)}<span class="lbl">2</span></div>`;
+      if(two) h += `<div class="slot" data-d="${ds}" data-h="${t}" data-s="1">${cellHtml(x1,key(ds,t,1))}<span class="lbl">2</span></div>`;
       h += '</div></td>';
     });
     h += '</tr>';
@@ -905,6 +912,7 @@ function addNextBookings(data){
 }
 // 週数の▼に触れた時点で「◯週間に1回」に切り替える
 ['mouseenter','mousedown','focus','change'].forEach(ev=>fEvery.addEventListener(ev,()=>{ dlg.querySelector('input[name=every][value=n]').checked=true; }));
+document.getElementById('fDone').addEventListener('change',e=>{ const k=key(cur.date,cur.h,cur.s); if(e.target.checked) DONE[k]=1; else delete DONE[k]; saveDone(); render(); });
 document.getElementById('fNs').addEventListener('change',e=>{ document.getElementById('dlgNs').hidden=!e.target.checked; });
 function getType(){ return dlg.querySelector('input[name=type]:checked').value; }
 
@@ -924,6 +932,7 @@ function openSlot(date,h,s){
   document.getElementById('fNs').checked = !!(x && x.ns);
   document.getElementById('dlgNs').hidden = !(x && x.ns);
   document.getElementById('fNs').parentElement.hidden = false;
+  document.getElementById('doneBox').hidden = !x; document.getElementById('fDone').checked = !!(x && DONE[key(date,h,s)]);
   fFixed.checked = !!(x && x.kind==='rule');
   setEvery(x && x.rule ? (x.rule.every||1) : 1);
   everyBox.hidden = multiBox.hidden = !fFixed.checked;
@@ -1446,7 +1455,7 @@ function renderDay(){
 function openDay(ds){ dDate=ds; renderDay(); if(!dlgD.open) dlgD.showModal(); }
 document.getElementById('dList').addEventListener('change',e=>{
   const dk=e.target.dataset.done;
-  if(dk){ if(e.target.checked) DONE[dk]=1; else delete DONE[dk]; saveDone(); renderDay(); return; }
+  if(dk){ if(e.target.checked) DONE[dk]=1; else delete DONE[dk]; saveDone(); renderDay(); render(); return; }
   const k=e.target.dataset.ns; if(!k) return;
   if(e.target.checked) S.noshow[k]=true; else delete S.noshow[k];
   save(); renderDay(); render();
