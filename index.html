@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 21:55">
+<meta name="app-ver" content="2026-11-14 21:59">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -785,6 +785,12 @@ function moveBooking(from,to,x){
   dlgMv.showModal();
 }
 document.getElementById('mvCancel').onclick=()=>{ mvPending=null; dlgMv.close(); };
+// どの画面(ダイアログ)も、外側(暗いところ)を押すと閉じる。入力途中の内容は保存しない(閉じるボタンと同じ)。
+// 中で押して外で離した(文字の選択など)ときは閉じない
+let bdDown=null;
+function onBackdrop(dl,e){ const r=dl.getBoundingClientRect(); return e.target===dl && (e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom); }
+document.addEventListener('pointerdown',e=>{ const dl=e.target.closest&&e.target.closest('dialog'); bdDown = dl&&dl.open&&onBackdrop(dl,e) ? dl : null; },true);
+document.addEventListener('click',e=>{ const dl=e.target; if(dl.tagName==='DIALOG' && dl.open && bdDown===dl && onBackdrop(dl,e)){ if(dl.id==='dlgMv') mvPending=null; dl.close(); } bdDown=null; },true);
 document.getElementById('mvOnce').onclick=()=>{
   const {from,to,x}=mvPending, r=x.rule, snap=JSON.stringify(S), fk=key(from.date,from.h,from.s), tk=key(to.date,to.h,to.s);
   S.skips[r.id+'|'+from.date]='moved';
