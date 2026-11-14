@@ -2,7 +2,7 @@
 <html lang="ja">
 <head><meta name="robots" content="noindex,nofollow">
 <meta charset="utf-8">
-<meta name="app-ver" content="2026-11-14 21:40">
+<meta name="app-ver" content="2026-11-14 21:48">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -200,6 +200,7 @@ body:not(.fs) .fsbar .fsonly{display:none}
 .maru{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border:1.5px solid var(--new-b);border-radius:50%;color:var(--new-b);font-size:10px;line-height:1;margin-right:2px;vertical-align:-3px;background:#fff}
 .tag.f{background:var(--fixed-b)} .tag.n{background:var(--new-b)} .tag.v{background:var(--visit-b);color:#3b2f00}
 .skipped{font-size:11px;color:#b8c0cc}
+td.memo .cxlUndo{display:block;width:100%;margin:2px 0 0;padding:3px 4px;font-size:11px;text-align:left;border:1px solid #c9a3a3;border-radius:4px;background:#fff5f5;color:#8a2a2a;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 td.memo textarea{width:100%;min-height:80px;border:none;resize:vertical;font:inherit;font-size:12px;padding:4px;background:transparent}
 th.memoh{font-size:12px}
 .count{font-size:11px;color:var(--sub);font-weight:normal}
@@ -671,7 +672,7 @@ function render(){
     h += '</tr>';
   }
   h += '<tr><th class="time memoh">MEMO</th>';
-  days.forEach(d=>{ const ds=ymd(d); h += `<td class="memo ${ds===today?'today':''}"><textarea data-memo="${ds}" placeholder="${isRO()?'':'この日のメモ'}" ${isRO()?'readonly':''}>${esc(S.dayMemos[ds]||'')}</textarea></td>`; });
+  days.forEach(d=>{ const ds=ymd(d); h += `<td class="memo ${ds===today?'today':''}"><textarea data-memo="${ds}" placeholder="${isRO()?'':'この日のメモ'}" ${isRO()?'readonly':''}>${esc(S.dayMemos[ds]||'')}</textarea>${isRO()?'':(S.cancels||[]).map((c,i)=>c.date===ds?`<button type="button" class="cxlUndo" data-ci="${i}" title="キャンセルを取り消して予約に戻す">↩ ${c.h}:00 ${esc(c.name)}さんを戻す</button>`:'').join('')}</td>`; });
   h += '</tr></tbody>';
   document.getElementById('grid').innerHTML = h;
   const m=roMeta(); document.getElementById('roBar').hidden=!m;
@@ -680,6 +681,8 @@ function render(){
 
 document.getElementById('grid').addEventListener('click',e=>{
   if(Date.now()-dragEndAt<500) return; // ドラッグを離した直後のクリックは無視
+  const cu = e.target.closest('.cxlUndo');
+  if(cu){ undoCancel(+cu.dataset.ci); return; }
   const a2 = e.target.closest('.add2');
   if(a2){ openSlot(a2.dataset.d, +a2.dataset.h, 1); return; }
   const el = e.target.closest('.slot'); if(!el) return;
@@ -980,12 +983,33 @@ document.getElementById('bDelete').onclick = ()=>{
 document.getElementById('bCxl').onclick = ()=>{ dlg.close(); doCancel(cur.date,cur.h,cur.s,cur.x); };
 function doCancel(date,h,s,x){
   const k=key(date,h,s), snap=JSON.stringify(S);
+  const bk = x.kind==='booking' ? JSON.parse(JSON.stringify(S.bookings[k]||{name:x.name,type:x.type,memo:x.memo||''})) : null;
   if(x.kind==='booking') delete S.bookings[k]; else S.skips[x.rule.id+'|'+date]='cancel';
+  (S.cancels=S.cancels||[]).push({id:uid(),date,h,s,name:x.name,type:x.type||'normal',memo:x.memo||'',kind:x.kind,bk,rid:x.kind==='rule'?x.rule.id:null,ns:!!S.noshow[k]});
   delete S.noshow[k];
-  (S.cancels=S.cancels||[]).push({date,h,s,name:x.name,type:x.type||'normal',memo:x.memo||''});
   const line=`${h}:00 ${x.name}さん キャンセル`;
   S.dayMemos[date] = S.dayMemos[date] ? S.dayMemos[date].replace(/\s+$/,'')+'\n'+line : line;
   moved(snap, `${x.name}さんの ${h}:00 をキャンセルにしました(枠を空けて、MEMOに書きました)`);
+}
+// キャンセルを取り消す(MEMO欄の「↩ 戻す」から)。枠が埋まっていれば戻さない
+function undoCancel(i){
+  const c=(S.cancels||[])[i]; if(!c) return;
+  const k=key(c.date,c.h,c.s);
+  let rid=c.rid;
+  if(!rid && c.kind!=='booking'){ // 古い記録:その日その枠の「キャンセル」休みを探す
+    const r=S.rules.find(r=>r.hour===c.h && r.slot===c.s && S.skips[r.id+'|'+c.date]==='cancel' && r.name===c.name);
+    if(r) rid=r.id;
+  }
+  if(S.bookings[k]){ alert(`${c.h}:00${c.s?'(2人目)':''} の枠には、いま ${S.bookings[k].name} さんの予約が入っています。
+先にその予約を別の枠へ動かしてから、もう一度「戻す」を押してください。`); return; }
+  const snap=JSON.stringify(S);
+  if(rid) delete S.skips[rid+'|'+c.date];
+  else S.bookings[k]=c.bk||{name:c.name,type:c.type||'normal',memo:c.memo||''};
+  if(c.ns) S.noshow[k]=true;
+  S.cancels.splice(i,1);
+  const line=`${c.h}:00 ${c.name}さん キャンセル`, m=S.dayMemos[c.date];
+  if(m){ const ls=m.split('\n'), j=ls.indexOf(line); if(j>=0){ ls.splice(j,1); const v=ls.join('\n').trim(); if(v) S.dayMemos[c.date]=v; else delete S.dayMemos[c.date]; } }
+  moved(snap, `${c.name}さんの ${c.h}:00 のキャンセルを取り消して、予約に戻しました`);
 }
 // このコマだけ消す(固定客はこの日だけ空ける。メモには書かない)
 function doDelete(date,h,s,x){
